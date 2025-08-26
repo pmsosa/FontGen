@@ -1,0 +1,527 @@
+{% extends "base.html" %}
+
+{% block title %}FontGen - Generate Custom Fonts{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Header -->
+    <div class="col-12 text-center mb-4">
+        <h1 class="display-4 mb-3">
+            <i class="bi bi-fonts me-3"></i>FontGen
+        </h1>
+        <p class="lead text-muted">
+            Turn your handwriting into professional TTF fonts using advanced vectorization
+        </p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Upload Section -->
+    <div class="col-lg-6 mb-4">
+        <div class="card card-custom h-100">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-cloud-upload me-2"></i>Upload Your Template
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="drop-zone" id="drop-zone">
+                    <i class="bi bi-cloud-upload display-4 text-muted mb-3"></i>
+                    <h5>Drop your filled template here</h5>
+                    <p class="text-muted">Or click to browse files</p>
+                    <input type="file" id="file-input" accept="image/*" style="display: none;">
+                    <button class="btn btn-outline-primary mt-2" onclick="document.getElementById('file-input').click()">
+                        Browse Files
+                    </button>
+                </div>
+                
+                <div id="upload-status" class="mt-3" style="display: none;">
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle me-2"></i>
+                        <span id="upload-filename">File uploaded successfully!</span>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <label for="font-name" class="form-label">Font Name</label>
+                    <input type="text" class="form-control" id="font-name" placeholder="MyCustomFont" value="MyFont">
+                    <div class="form-text">This will be the name of your generated font</div>
+                </div>
+                
+                <div class="d-grid gap-2 mt-4">
+                    <button class="btn btn-custom btn-lg" id="generate-preview" disabled>
+                        <span class="btn-text">
+                            <i class="bi bi-eye me-2"></i>Generate Preview
+                        </span>
+                        <div class="spinner-border spinner-border-sm loading-spinner me-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Settings Section -->
+    <div class="col-lg-6 mb-4">
+        <div class="card card-custom h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-sliders me-2"></i>Font Settings
+                </h5>
+                <button class="btn btn-outline-secondary btn-sm" id="toggle-advanced">
+                    <i class="bi bi-gear me-1"></i>Advanced
+                </button>
+            </div>
+            <div class="card-body">
+                <!-- Basic Settings -->
+                <div id="basic-settings">
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <label class="form-label">Uppercase Size</label>
+                            <span class="slider-value" id="uppercase-value">4.0</span>
+                        </div>
+                        <input type="range" class="form-range" id="uppercase-scale" min="1.0" max="6.0" step="0.1" value="4.0">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <label class="form-label">Lowercase Size</label>
+                            <span class="slider-value" id="lowercase-value">2.8</span>
+                        </div>
+                        <input type="range" class="form-range" id="lowercase-scale" min="1.0" max="5.0" step="0.1" value="2.8">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <label class="form-label">Space Width</label>
+                            <span class="slider-value" id="space-value">1800</span>
+                        </div>
+                        <input type="range" class="form-range" id="space-width" min="200" max="3000" step="100" value="1800">
+                    </div>
+                </div>
+                
+                <!-- Advanced Settings (Hidden by default) -->
+                <div id="advanced-settings" style="display: none;">
+                    <hr>
+                    <h6 class="text-muted mb-3">Advanced Settings</h6>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <label class="form-label">Numbers Size</label>
+                            <span class="slider-value" id="numbers-value">3.8</span>
+                        </div>
+                        <input type="range" class="form-range" id="numbers-scale" min="1.0" max="6.0" step="0.1" value="3.8">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <label class="form-label">Symbols Size</label>
+                            <span class="slider-value" id="symbols-value">3.5</span>
+                        </div>
+                        <input type="range" class="form-range" id="symbols-scale" min="1.0" max="6.0" step="0.1" value="3.5">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <label class="form-label">Left Spacing</label>
+                            <span class="slider-value" id="left-bearing-value">25</span>
+                        </div>
+                        <input type="range" class="form-range" id="left-bearing" min="0" max="100" step="5" value="25">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <label class="form-label">Right Spacing</label>
+                            <span class="slider-value" id="right-bearing-value">25</span>
+                        </div>
+                        <input type="range" class="form-range" id="right-bearing" min="0" max="100" step="5" value="25">
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <button class="btn btn-outline-secondary w-100" id="reset-defaults">
+                        <i class="bi bi-arrow-counterclockwise me-2"></i>Reset to Defaults
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row" id="preview-section" style="display: none;">
+    <!-- Preview Section -->
+    <div class="col-12 mb-4">
+        <div class="card card-custom">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-eye me-2"></i>Font Preview
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="preview-text-input" class="form-label">Sample Text</label>
+                    <input type="text" class="form-control" id="preview-text-input" 
+                           placeholder="Type your text here..." 
+                           value="The quick brown fox jumps over the lazy dog">
+                </div>
+                
+                <div class="preview-text" id="preview-display">
+                    <!-- Preview will be rendered here -->
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-fonts display-4"></i>
+                        <p class="mt-3">Your font preview will appear here</p>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 mt-4">
+                    <button class="btn btn-success btn-lg" id="generate-font" disabled>
+                        <span class="btn-text">
+                            <i class="bi bi-download me-2"></i>Generate TTF Font
+                        </span>
+                        <div class="spinner-border spinner-border-sm loading-spinner me-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Start Guide -->
+<div class="row">
+    <div class="col-12">
+        <div class="card card-custom">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-question-circle me-2"></i>How to Use FontGen
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="bg-primary rounded-circle p-3 d-inline-flex">
+                            <i class="bi bi-grid-3x3 fs-3"></i>
+                        </div>
+                        <h6 class="mt-2">1. Generate Template</h6>
+                        <p class="text-muted small">Create a template with character boxes</p>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="bg-success rounded-circle p-3 d-inline-flex">
+                            <i class="bi bi-pencil fs-3"></i>
+                        </div>
+                        <h6 class="mt-2">2. Draw Characters</h6>
+                        <p class="text-muted small">Fill in each box with your handwriting</p>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="bg-info rounded-circle p-3 d-inline-flex">
+                            <i class="bi bi-cloud-upload fs-3"></i>
+                        </div>
+                        <h6 class="mt-2">3. Upload & Preview</h6>
+                        <p class="text-muted small">Upload your filled template and adjust settings</p>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="bg-warning rounded-circle p-3 d-inline-flex">
+                            <i class="bi bi-download fs-3"></i>
+                        </div>
+                        <h6 class="mt-2">4. Generate Font</h6>
+                        <p class="text-muted small">Download your custom TTF font!</p>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-3">
+                    <a href="/template-generator" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-right me-2"></i>Start with Template Generator
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Global variables
+let uploadedFilePath = null;
+let currentSvgDir = null;
+let fontSettings = {
+    uppercase_scale: 4.0,
+    lowercase_scale: 2.8,
+    numbers_scale: 3.8,
+    symbols_scale: 3.5,
+    space_width: 1800,
+    left_bearing: 25,
+    right_bearing: 25
+};
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    initializeEventListeners();
+    updateSliderValues();
+});
+
+function initializeEventListeners() {
+    // File upload handling
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', handleDragOver);
+    dropZone.addEventListener('dragleave', handleDragLeave);
+    dropZone.addEventListener('drop', handleDrop);
+    fileInput.addEventListener('change', handleFileSelect);
+    
+    // Buttons
+    document.getElementById('generate-preview').addEventListener('click', generatePreview);
+    document.getElementById('generate-font').addEventListener('click', generateFont);
+    document.getElementById('toggle-advanced').addEventListener('click', toggleAdvanced);
+    document.getElementById('reset-defaults').addEventListener('click', resetDefaults);
+    
+    // Sliders
+    const sliders = ['uppercase-scale', 'lowercase-scale', 'numbers-scale', 'symbols-scale', 'space-width', 'left-bearing', 'right-bearing'];
+    sliders.forEach(id => {
+        const slider = document.getElementById(id);
+        if (slider) {
+            slider.addEventListener('input', updateSliderValues);
+        }
+    });
+    
+    // Preview text input
+    document.getElementById('preview-text-input').addEventListener('input', updatePreview);
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+    e.currentTarget.classList.add('dragover');
+}
+
+function handleDragLeave(e) {
+    e.currentTarget.classList.remove('dragover');
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('dragover');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        handleFile(files[0]);
+    }
+}
+
+function handleFileSelect(e) {
+    const files = e.target.files;
+    if (files.length > 0) {
+        handleFile(files[0]);
+    }
+}
+
+async function handleFile(file) {
+    if (!file.type.startsWith('image/')) {
+        alert('Please select an image file.');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+        const response = await fetch('/api/upload-image', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            uploadedFilePath = result.file_path;
+            document.getElementById('upload-status').style.display = 'block';
+            document.getElementById('upload-filename').textContent = result.filename;
+            document.getElementById('generate-preview').disabled = false;
+        } else {
+            alert('Upload failed: ' + result.detail);
+        }
+    } catch (error) {
+        alert('Upload error: ' + error.message);
+    }
+}
+
+async function generatePreview() {
+    if (!uploadedFilePath) {
+        alert('Please upload an image first.');
+        return;
+    }
+    
+    const fontName = document.getElementById('font-name').value || 'MyFont';
+    const button = document.getElementById('generate-preview');
+    
+    button.classList.add('loading');
+    button.disabled = true;
+    
+    const formData = new FormData();
+    formData.append('file_path', uploadedFilePath);
+    formData.append('font_name', fontName);
+    formData.append('uppercase_scale', fontSettings.uppercase_scale);
+    formData.append('lowercase_scale', fontSettings.lowercase_scale);
+    formData.append('numbers_scale', fontSettings.numbers_scale);
+    formData.append('symbols_scale', fontSettings.symbols_scale);
+    formData.append('space_width', fontSettings.space_width);
+    formData.append('left_bearing', fontSettings.left_bearing);
+    formData.append('right_bearing', fontSettings.right_bearing);
+    
+    try {
+        const response = await fetch('/api/preview', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            currentSvgDir = result.svg_dir;
+            document.getElementById('preview-section').style.display = 'block';
+            document.getElementById('generate-font').disabled = false;
+            
+            // Update preview display
+            updatePreview();
+            
+            // Scroll to preview
+            document.getElementById('preview-section').scrollIntoView({ behavior: 'smooth' });
+        } else {
+            alert('Preview generation failed: ' + result.detail);
+        }
+    } catch (error) {
+        alert('Preview error: ' + error.message);
+    } finally {
+        button.classList.remove('loading');
+        button.disabled = false;
+    }
+}
+
+async function generateFont() {
+    if (!currentSvgDir) {
+        alert('Please generate a preview first.');
+        return;
+    }
+    
+    const fontName = document.getElementById('font-name').value || 'MyFont';
+    const button = document.getElementById('generate-font');
+    
+    button.classList.add('loading');
+    button.disabled = true;
+    
+    const formData = new FormData();
+    formData.append('svg_dir', currentSvgDir);
+    formData.append('font_name', fontName);
+    
+    try {
+        const response = await fetch('/api/generate-font', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Create download link
+            const a = document.createElement('a');
+            a.href = result.font_url;
+            a.download = result.font_file;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            // Show success message
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success mt-3';
+            alert.innerHTML = `
+                <i class="bi bi-check-circle me-2"></i>
+                Font generated successfully! Download should start automatically.
+            `;
+            
+            button.parentNode.insertBefore(alert, button.nextSibling);
+            
+            setTimeout(() => alert.remove(), 5000);
+        } else {
+            alert('Font generation failed: ' + result.detail);
+        }
+    } catch (error) {
+        alert('Font generation error: ' + error.message);
+    } finally {
+        button.classList.remove('loading');
+        button.disabled = false;
+    }
+}
+
+function toggleAdvanced() {
+    const advanced = document.getElementById('advanced-settings');
+    const isVisible = advanced.style.display !== 'none';
+    
+    advanced.style.display = isVisible ? 'none' : 'block';
+    
+    const button = document.getElementById('toggle-advanced');
+    button.innerHTML = isVisible ? 
+        '<i class="bi bi-gear me-1"></i>Advanced' : 
+        '<i class="bi bi-gear-fill me-1"></i>Basic';
+}
+
+function updateSliderValues() {
+    const sliders = {
+        'uppercase-scale': 'uppercase-value',
+        'lowercase-scale': 'lowercase-value',
+        'numbers-scale': 'numbers-value',
+        'symbols-scale': 'symbols-value',
+        'space-width': 'space-value',
+        'left-bearing': 'left-bearing-value',
+        'right-bearing': 'right-bearing-value'
+    };
+    
+    Object.entries(sliders).forEach(([sliderId, valueId]) => {
+        const slider = document.getElementById(sliderId);
+        const valueDisplay = document.getElementById(valueId);
+        
+        if (slider && valueDisplay) {
+            valueDisplay.textContent = slider.value;
+            
+            // Update fontSettings
+            const settingKey = sliderId.replace('-', '_');
+            fontSettings[settingKey] = parseFloat(slider.value);
+        }
+    });
+}
+
+function updatePreview() {
+    const previewText = document.getElementById('preview-text-input').value;
+    const previewDisplay = document.getElementById('preview-display');
+    
+    if (currentSvgDir) {
+        // For now, just show text preview
+        // TODO: Implement SVG-based preview with actual characters
+        previewDisplay.innerHTML = `
+            <div class="text-center">
+                <p style="font-size: 2rem; font-family: monospace; line-height: 1.5;">
+                    ${previewText}
+                </p>
+                <small class="text-muted">
+                    Preview with your custom font characters coming soon!
+                </small>
+            </div>
+        `;
+    }
+}
+
+function resetDefaults() {
+    document.getElementById('uppercase-scale').value = 4.0;
+    document.getElementById('lowercase-scale').value = 2.8;
+    document.getElementById('numbers-scale').value = 3.8;
+    document.getElementById('symbols-scale').value = 3.5;
+    document.getElementById('space-width').value = 1800;
+    document.getElementById('left-bearing').value = 25;
+    document.getElementById('right-bearing').value = 25;
+    
+    updateSliderValues();
+}
+</script>
+{% endblock %}

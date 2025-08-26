@@ -1,0 +1,422 @@
+{% extends "base.html" %}
+
+{% block title %}Template Generator - FontGen{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Header -->
+    <div class="col-12 text-center mb-4">
+        <h1 class="display-5 mb-3">
+            <i class="bi bi-grid-3x3 me-3"></i>Template Generator
+        </h1>
+        <p class="lead text-muted">
+            Create custom templates with your chosen characters
+        </p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Character Selection -->
+    <div class="col-lg-8 mb-4">
+        <div class="card card-custom">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-check2-square me-2"></i>Select Characters
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Quick Select Buttons -->
+                <div class="mb-3">
+                    <button class="btn btn-outline-primary btn-sm me-2" onclick="selectPreset('all')">
+                        <i class="bi bi-check-all me-1"></i>Select All
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm me-2" onclick="selectPreset('none')">
+                        <i class="bi bi-x-square me-1"></i>Clear All
+                    </button>
+                    <button class="btn btn-outline-success btn-sm me-2" onclick="selectPreset('english')">
+                        <i class="bi bi-translate me-1"></i>English Basic
+                    </button>
+                    <button class="btn btn-outline-info btn-sm" onclick="selectPreset('spanish')">
+                        <i class="bi bi-globe me-1"></i>Add Spanish
+                    </button>
+                </div>
+                
+                <!-- Character Sets -->
+                {% for set_name, character_sets in character_sets.items() %}
+                <div class="mb-4">
+                    <h6 class="text-muted mb-3">{{ set_name }}</h6>
+                    
+                    {% for category, characters in character_sets.items() %}
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <input type="checkbox" class="form-check-input me-2" id="toggle-{{ category }}" 
+                                   onchange="toggleCategory('{{ category }}')">
+                            <label for="toggle-{{ category }}" class="form-check-label fw-bold text-capitalize">
+                                {{ category }} ({{ characters|length }})
+                            </label>
+                        </div>
+                        
+                        <div class="character-grid" id="grid-{{ category }}">
+                            {% for char in characters %}
+                            <div class="character-box" data-char="{{ char }}" data-category="{{ category }}" 
+                                 onclick="toggleCharacter(this)">
+                                {{ char if char != ' ' else '␣' }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+                
+                <!-- Custom Characters -->
+                <div class="mb-3">
+                    <h6 class="text-muted mb-3">Custom Characters</h6>
+                    <div class="mb-2">
+                        <label for="custom-chars" class="form-label">Add your own characters:</label>
+                        <input type="text" class="form-control" id="custom-chars" 
+                               placeholder="Type additional characters here..."
+                               oninput="updateCustomCharacters()">
+                        <div class="form-text">Each character you type will be added to the template</div>
+                    </div>
+                    <div class="character-grid" id="custom-grid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Template Settings & Generation -->
+    <div class="col-lg-4 mb-4">
+        <div class="card card-custom h-100">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-gear me-2"></i>Template Settings
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Template Format -->
+                <div class="mb-3">
+                    <label class="form-label">Output Format</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="format" id="format-svg" value="svg" checked>
+                        <label class="form-check-label" for="format-svg">
+                            SVG (Vector)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="format" id="format-png" value="png">
+                        <label class="form-check-label" for="format-png">
+                            PNG (High Resolution)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="format" id="format-both" value="both">
+                        <label class="form-check-label" for="format-both">
+                            Both (Recommended)
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Template Name -->
+                <div class="mb-3">
+                    <label for="template-name" class="form-label">Template Name</label>
+                    <input type="text" class="form-control" id="template-name" value="font_template">
+                </div>
+                
+                <!-- Character Count Display -->
+                <div class="mb-4">
+                    <div class="card bg-dark border-secondary">
+                        <div class="card-body text-center">
+                            <h3 class="mb-1" id="char-count">0</h3>
+                            <small class="text-muted">Characters Selected</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Generate Button -->
+                <div class="d-grid gap-2">
+                    <button class="btn btn-custom btn-lg" id="generate-template" onclick="generateTemplate()">
+                        <span class="btn-text">
+                            <i class="bi bi-grid-3x3 me-2"></i>Generate Template
+                        </span>
+                        <div class="spinner-border spinner-border-sm loading-spinner me-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </button>
+                </div>
+                
+                <!-- Quick Tips -->
+                <div class="mt-4">
+                    <h6 class="text-muted mb-2">
+                        <i class="bi bi-lightbulb me-1"></i>Tips
+                    </h6>
+                    <ul class="small text-muted">
+                        <li>Select only characters you plan to draw</li>
+                        <li>PNG format works best with Procreate</li>
+                        <li>SVG format is scalable and precise</li>
+                        <li>You can add custom symbols and accents</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Download Section (Hidden initially) -->
+<div class="row" id="download-section" style="display: none;">
+    <div class="col-12">
+        <div class="card card-custom">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-download me-2"></i>Download Your Template
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle me-2"></i>
+                    Template generated successfully!
+                </div>
+                
+                <div id="download-links" class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <!-- Download links will be inserted here -->
+                </div>
+                
+                <div class="mt-4">
+                    <h6 class="mb-2">Next Steps:</h6>
+                    <ol class="text-start d-inline-block">
+                        <li class="mb-1">Download your template</li>
+                        <li class="mb-1">Open in Procreate, Photoshop, or any drawing app</li>
+                        <li class="mb-1">Draw your characters in each labeled box</li>
+                        <li class="mb-1">Export as PNG when finished</li>
+                        <li>Return to <a href="/" class="text-decoration-none">Font Generator</a> to create your TTF font!</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selectedCharacters = new Set();
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    updateCharacterCount();
+    
+    // Auto-select English basic by default
+    selectPreset('english');
+});
+
+function toggleCharacter(element) {
+    const char = element.dataset.char;
+    
+    if (element.classList.contains('selected')) {
+        element.classList.remove('selected');
+        selectedCharacters.delete(char);
+    } else {
+        element.classList.add('selected');
+        selectedCharacters.add(char);
+    }
+    
+    updateCharacterCount();
+    updateCategoryToggle(element.dataset.category);
+}
+
+function toggleCategory(category) {
+    const toggle = document.getElementById(`toggle-${category}`);
+    const grid = document.getElementById(`grid-${category}`);
+    const boxes = grid.querySelectorAll('.character-box');
+    
+    boxes.forEach(box => {
+        const char = box.dataset.char;
+        
+        if (toggle.checked) {
+            box.classList.add('selected');
+            selectedCharacters.add(char);
+        } else {
+            box.classList.remove('selected');
+            selectedCharacters.delete(char);
+        }
+    });
+    
+    updateCharacterCount();
+}
+
+function updateCategoryToggle(category) {
+    const toggle = document.getElementById(`toggle-${category}`);
+    const grid = document.getElementById(`grid-${category}`);
+    const boxes = grid.querySelectorAll('.character-box');
+    const selectedBoxes = grid.querySelectorAll('.character-box.selected');
+    
+    if (selectedBoxes.length === 0) {
+        toggle.checked = false;
+        toggle.indeterminate = false;
+    } else if (selectedBoxes.length === boxes.length) {
+        toggle.checked = true;
+        toggle.indeterminate = false;
+    } else {
+        toggle.checked = false;
+        toggle.indeterminate = true;
+    }
+}
+
+function selectPreset(preset) {
+    // Clear current selection
+    selectedCharacters.clear();
+    document.querySelectorAll('.character-box.selected').forEach(box => {
+        box.classList.remove('selected');
+    });
+    
+    document.querySelectorAll('input[id^="toggle-"]').forEach(toggle => {
+        toggle.checked = false;
+        toggle.indeterminate = false;
+    });
+    
+    // Apply preset
+    switch (preset) {
+        case 'all':
+            document.querySelectorAll('.character-box').forEach(box => {
+                box.classList.add('selected');
+                selectedCharacters.add(box.dataset.char);
+            });
+            document.querySelectorAll('input[id^="toggle-"]').forEach(toggle => {
+                toggle.checked = true;
+            });
+            break;
+            
+        case 'english':
+            ['uppercase', 'lowercase', 'numbers', 'symbols'].forEach(category => {
+                const toggle = document.getElementById(`toggle-${category}`);
+                if (toggle) {
+                    toggle.checked = true;
+                    toggleCategory(category);
+                }
+            });
+            break;
+            
+        case 'spanish':
+            // Add Spanish accented characters to existing selection
+            const toggle = document.getElementById('toggle-accented');
+            if (toggle) {
+                toggle.checked = true;
+                toggleCategory('accented');
+            }
+            break;
+            
+        case 'none':
+            // Already cleared above
+            break;
+    }
+    
+    updateCharacterCount();
+}
+
+function updateCustomCharacters() {
+    const input = document.getElementById('custom-chars');
+    const grid = document.getElementById('custom-grid');
+    
+    // Clear existing custom characters
+    grid.innerHTML = '';
+    
+    // Remove existing custom characters from selection
+    Array.from(selectedCharacters).forEach(char => {
+        if (!document.querySelector(`.character-box[data-char="${char}"]:not([data-category="custom"])`)) {
+            selectedCharacters.delete(char);
+        }
+    });
+    
+    // Add new custom characters
+    const customChars = [...new Set(input.value.split(''))].filter(char => char.trim());
+    
+    customChars.forEach(char => {
+        const box = document.createElement('div');
+        box.className = 'character-box selected';
+        box.dataset.char = char;
+        box.dataset.category = 'custom';
+        box.textContent = char === ' ' ? '␣' : char;
+        box.onclick = function() { toggleCharacter(this); };
+        
+        grid.appendChild(box);
+        selectedCharacters.add(char);
+    });
+    
+    updateCharacterCount();
+}
+
+function updateCharacterCount() {
+    document.getElementById('char-count').textContent = selectedCharacters.size;
+}
+
+async function generateTemplate() {
+    if (selectedCharacters.size === 0) {
+        alert('Please select at least one character.');
+        return;
+    }
+    
+    const button = document.getElementById('generate-template');
+    button.classList.add('loading');
+    button.disabled = true;
+    
+    const format = document.querySelector('input[name="format"]:checked').value;
+    const templateName = document.getElementById('template-name').value || 'font_template';
+    
+    const formData = new FormData();
+    formData.append('characters', JSON.stringify([...selectedCharacters]));
+    formData.append('format', format);
+    formData.append('filename', templateName);
+    
+    try {
+        const response = await fetch('/api/generate-template', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showDownloadSection(result);
+        } else {
+            alert('Template generation failed: ' + result.detail);
+        }
+    } catch (error) {
+        alert('Generation error: ' + error.message);
+    } finally {
+        button.classList.remove('loading');
+        button.disabled = false;
+    }
+}
+
+function showDownloadSection(result) {
+    const downloadSection = document.getElementById('download-section');
+    const downloadLinks = document.getElementById('download-links');
+    
+    downloadLinks.innerHTML = '';
+    
+    // Add SVG download link
+    if (result.svg_file) {
+        const svgLink = document.createElement('a');
+        svgLink.href = result.svg_url;
+        svgLink.download = result.svg_file;
+        svgLink.className = 'btn btn-outline-primary btn-lg me-2';
+        svgLink.innerHTML = '<i class="bi bi-file-earmark-code me-2"></i>Download SVG';
+        downloadLinks.appendChild(svgLink);
+    }
+    
+    // Add PNG download link
+    if (result.png_file) {
+        const pngLink = document.createElement('a');
+        pngLink.href = result.png_url;
+        pngLink.download = result.png_file;
+        pngLink.className = 'btn btn-primary btn-lg';
+        pngLink.innerHTML = '<i class="bi bi-file-earmark-image me-2"></i>Download PNG';
+        downloadLinks.appendChild(pngLink);
+    }
+    
+    // Show the download section
+    downloadSection.style.display = 'block';
+    downloadSection.scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+{% endblock %}
