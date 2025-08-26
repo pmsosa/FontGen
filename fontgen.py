@@ -240,9 +240,9 @@ import sys
 
 # Create new font
 font = fontforge.font()
-font.fontname = "{font_name}Potrace"
-font.familyname = "{font_name}Potrace"
-font.fullname = "{font_name} (Potrace Vectorized)"
+font.fontname = "{font_name}"
+font.familyname = "{font_name}"
+font.fullname = "{font_name}"
 
 # Set font properties from config
 font.em = {font_props['em_units']}
@@ -316,7 +316,7 @@ font.weight = "Regular"
 print(f"\\nSuccessfully processed {{successful_chars}} characters")
 
 # Generate font
-output_path = "{font_name}_potrace.ttf"
+output_path = "{font_name}.ttf"
 font.generate(output_path, flags=("opentype", "round"))
 
 print(f"\\n🎉 Potrace font generated: {{output_path}}")
@@ -382,7 +382,7 @@ if os.path.exists(output_path):
                 print(result.stderr)
             
             if result.returncode == 0:
-                output_font = f"{font_name}_potrace.ttf"
+                output_font = f"{font_name}.ttf"
                 if os.path.exists(output_font):
                     print(f"\n🎉 SUCCESS! Potrace TTF font created: {output_font}")
                     print("📋 Try installing this in Font Book - it should work much better!")
