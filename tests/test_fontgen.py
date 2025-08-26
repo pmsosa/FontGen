@@ -81,6 +81,33 @@ class TestFontGen(unittest.TestCase):
         os.chdir(self.original_cwd)
         shutil.rmtree(self.test_dir, ignore_errors=True)
         
+    def test_fontforge_installation(self):
+        """Test if FontForge is properly installed and working on M2"""
+        print("\n🔍 Testing FontForge installation...")
+        
+        try:
+            # Test basic FontForge availability
+            result = subprocess.run(['fontforge', '--version'], 
+                                  capture_output=True, text=True, timeout=10)
+            
+            self.assertEqual(result.returncode, 0, 
+                           "FontForge is not installed or not working")
+            
+            print(f"✅ FontForge version: {result.stdout.strip()}")
+            
+            # Check if it's native ARM64 or running under Rosetta
+            arch_result = subprocess.run(['file', '/opt/homebrew/bin/fontforge'], 
+                                       capture_output=True, text=True)
+            
+            if 'arm64' in arch_result.stdout:
+                print("✅ FontForge is running natively on ARM64 (M2 compatible)")
+            elif 'x86_64' in arch_result.stdout:
+                print("⚠️  FontForge is x86_64 (may require Rosetta)")
+            else:
+                print(f"ℹ️  Architecture info: {arch_result.stdout}")
+                
+        except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired) as e:
+            self.fail(f"FontForge test failed: {e}")
     
     def test_potrace_installation(self):
         """Test if Potrace is properly installed and working"""
@@ -99,6 +126,69 @@ class TestFontGen(unittest.TestCase):
         except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired) as e:
             self.fail(f"Potrace test failed: {e}")
     
+    def test_fontforge_python_scripting(self):
+        """Test if FontForge Python scripting works"""
+        print("\n🐍 Testing FontForge Python scripting...")
+        
+        # Create a minimal FontForge script
+        test_script = os.path.join(self.test_dir, "test_script.py")
+        with open(test_script, 'w') as f:
+            f.write("""#!/usr/bin/env fontforge
+import fontforge
+import sys
+
+try:
+    # Create a simple font
+    font = fontforge.font()
+    font.fontname = "TestFont"
+    font.familyname = "TestFont"
+    
+    # Create a simple glyph for 'A'
+    glyph = font.createChar(ord('A'))
+    glyph.width = 600
+    
+    # Simple rectangle outline for testing
+    pen = glyph.glyphPen()
+    pen.moveTo((100, 100))
+    pen.lineTo((500, 100))
+    pen.lineTo((500, 600))
+    pen.lineTo((100, 600))
+    pen.closePath()
+    
+    output_path = sys.argv[1] if len(sys.argv) > 1 else "test_font.ttf"
+    font.generate(output_path)
+    
+    print("SUCCESS: Font generated successfully")
+    
+except Exception as e:
+    print(f"ERROR: {e}")
+    sys.exit(1)
+""")
+        
+        try:
+            output_font = os.path.join(self.test_dir, "test_font.ttf")
+            result = subprocess.run(['fontforge', '-script', test_script, output_font], 
+                                  capture_output=True, text=True, timeout=30)
+            
+            self.assertEqual(result.returncode, 0, 
+                           f"FontForge scripting failed: {result.stderr}")
+            
+            # Check if font file was created
+            self.assertTrue(os.path.exists(output_font), 
+                          "Font file was not created")
+            
+            # Check file size (should be reasonable)
+            file_size = os.path.getsize(output_font)
+            self.assertGreater(file_size, 1000, 
+                             "Generated font file is too small")
+            
+            print("✅ FontForge Python scripting works correctly")
+            print(f"✅ Generated test font: {file_size} bytes")
+            
+        except subprocess.TimeoutExpired:
+            self.fail("FontForge scripting timed out (may be hanging)")
+        except Exception as e:
+            self.fail(f"FontForge scripting test failed: {e}")
     
     def test_svg_template_generation(self):
         """Test SVG template generation"""
