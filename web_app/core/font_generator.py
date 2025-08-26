@@ -98,6 +98,41 @@ class FontGenerator:
                 }
         return char_properties
     
+    def make_safe_filename(self, char):
+        """Convert character to filesystem-safe filename"""
+        char_map = {
+            '/': 'slash',
+            '\\': 'backslash', 
+            ':': 'colon',
+            '*': 'asterisk',
+            '?': 'question',
+            '"': 'quote',
+            "'": 'apostrophe',
+            '<': 'less',
+            '>': 'greater',
+            '|': 'pipe',
+            ' ': 'space',
+            '\t': 'tab',
+            '\n': 'newline',
+            '\r': 'return',
+            '&': 'ampersand',
+            '%': 'percent',
+            '#': 'hash',
+            '@': 'at',
+            '!': 'exclamation',
+            '~': 'tilde',
+            '`': 'backtick'
+        }
+        
+        if char in char_map:
+            return char_map[char]
+        
+        # For other characters, use ASCII code if not alphanumeric
+        if not char.isalnum():
+            return f"char_{ord(char)}"
+        
+        return char
+    
     def get_all_characters(self):
         """Get all characters from all character sets"""
         chars = []
@@ -134,8 +169,21 @@ class FontGenerator:
         chars_per_row = 13
         num_rows = (len(characters) + chars_per_row - 1) // chars_per_row
         
-        # Template settings
-        template_config = self.config['template_generation']
+        # Template settings - handle both config structures
+        template_config = self.config.get('template_generation')
+        if not template_config:
+            # Try nested structure
+            template_config = self.config.get('font_generation', {}).get('template_settings', {
+                'template_size': 100,  # Use template_size as box_size
+                'grid_cols': 13,
+                'margin': 20
+            })
+            # Map template_size to box_size if needed
+            if 'template_size' in template_config and 'box_size' not in template_config:
+                template_config['box_size'] = template_config['template_size']
+            if 'box_spacing' not in template_config:
+                template_config['box_spacing'] = 10
+        
         box_size = template_config['box_size']
         box_spacing = template_config['box_spacing']
         margin = template_config['margin']
@@ -215,12 +263,20 @@ class FontGenerator:
         if img.mode != 'RGB':
             img = img.convert('RGB')
         
-        # Get template settings
-        template_config = self.config.get('template_generation', {
-            'box_size': 80,
-            'box_spacing': 10,
-            'margin': 20
-        })
+        # Get template settings - handle both config structures
+        template_config = self.config.get('template_generation')
+        if not template_config:
+            # Try nested structure
+            template_config = self.config.get('font_generation', {}).get('template_settings', {
+                'template_size': 100,  # Use template_size as box_size
+                'grid_cols': 13,
+                'margin': 20
+            })
+            # Map template_size to box_size if needed
+            if 'template_size' in template_config and 'box_size' not in template_config:
+                template_config['box_size'] = template_config['template_size']
+            if 'box_spacing' not in template_config:
+                template_config['box_spacing'] = 10
         box_size = template_config['box_size']
         box_spacing = template_config['box_spacing']
         margin = template_config['margin']
@@ -246,8 +302,8 @@ class FontGenerator:
             # Extract character box
             char_img = img.crop((x, y, x + scaled_box_size, y + scaled_box_size))
             
-            # Save character image
-            safe_char = char.replace('/', 'slash').replace('\\', 'backslash').replace(':', 'colon')
+            # Save character image with safe filename
+            safe_char = self.make_safe_filename(char)
             char_path = os.path.join(output_dir, f"{safe_char}.png")
             char_img.save(char_path)
             extracted_files.append(char_path)

@@ -173,27 +173,156 @@ async def generate_preview(
         if not svg_dir:
             raise HTTPException(status_code=500, detail="Failed to generate preview")
         
-        # Get list of generated SVGs
+        # Get list of generated SVGs with character mapping
         svg_files = []
+        character_map = {}
+        
         if os.path.exists(svg_dir):
             for svg_file in os.listdir(svg_dir):
                 if svg_file.endswith('.svg'):
                     char_name = svg_file.replace('.svg', '')
-                    # Read SVG content
+                    
+                    # Handle special character names
+                    actual_char = get_actual_character(char_name)
+                    
+                    # Read and process SVG content
                     with open(os.path.join(svg_dir, svg_file), 'r') as f:
                         svg_content = f.read()
                     
+                    # Extract viewBox and path data for easier manipulation
+                    svg_info = extract_svg_info(svg_content)
+                    
                     svg_files.append({
-                        'character': char_name,
+                        'character': actual_char,
+                        'char_name': char_name,
                         'svg_content': svg_content,
+                        'svg_info': svg_info,
                         'svg_file': svg_file
                     })
+                    
+                    character_map[actual_char] = {
+                        'svg_content': svg_content,
+                        'svg_info': svg_info,
+                        'scale_factor': font_gen.char_properties.get(actual_char, {}).get('scale_factor', 3.0)
+                    }
         
         return JSONResponse({
             "success": True,
             "svg_dir": svg_dir,
             "svg_files": svg_files,
-            "font_name": font_name
+            "character_map": character_map,
+            "font_name": font_name,
+            "settings": {
+                'uppercase_scale': uppercase_scale,
+                'lowercase_scale': lowercase_scale,
+                'numbers_scale': numbers_scale,
+                'symbols_scale': symbols_scale,
+                'space_width': space_width,
+                'left_bearing': left_bearing,
+                'right_bearing': right_bearing
+            }
+        })
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+def get_actual_character(char_name):
+    """Convert file-safe character names back to actual characters"""
+    char_map = {
+        'slash': '/',
+        'backslash': '\\', 
+        'colon': ':',
+        'asterisk': '*',
+        'question': '?',
+        'quote': '"',
+        'apostrophe': "'",
+        'less': '<',
+        'greater': '>',
+        'pipe': '|',
+        'space': ' ',
+        'tab': '\t',
+        'newline': '\n',
+        'return': '\r',
+        'ampersand': '&',
+        'percent': '%',
+        'hash': '#',
+        'at': '@',
+        'exclamation': '!',
+        'tilde': '~',
+        'backtick': '`'
+    }
+    
+    # Handle char_XXX format (ASCII codes)
+    if char_name.startswith('char_') and char_name[5:].isdigit():
+        return chr(int(char_name[5:]))
+    
+    return char_map.get(char_name, char_name)
+
+def extract_svg_info(svg_content):
+    """Extract viewBox and path information from SVG"""
+    import re
+    
+    # Extract viewBox
+    viewbox_match = re.search(r'viewBox="([^"]*)"', svg_content)
+    viewbox = viewbox_match.group(1) if viewbox_match else "0 0 100 100"
+    
+    # Extract path data
+    path_matches = re.findall(r'<path[^>]*d="([^"]*)"', svg_content)
+    paths = path_matches if path_matches else []
+    
+    return {
+        'viewbox': viewbox,
+        'paths': paths,
+        'width': 100,  # Default width
+        'height': 100  # Default height
+    }
+
+@app.post("/api/update-preview")
+async def update_preview_settings(
+    character_map: dict,
+    uppercase_scale: float = Form(4.0),
+    lowercase_scale: float = Form(2.8),
+    numbers_scale: float = Form(3.8),
+    symbols_scale: float = Form(3.5),
+    space_width: int = Form(1800),
+    left_bearing: int = Form(25),
+    right_bearing: int = Form(25)
+):
+    """Update preview settings without regenerating SVGs"""
+    try:
+        # Update character scaling based on new settings
+        updated_character_map = {}
+        
+        for char, char_data in character_map.items():
+            # Determine character type and apply appropriate scaling
+            scale_factor = 3.0  # Default
+            
+            if char.isupper():
+                scale_factor = uppercase_scale
+            elif char.islower():
+                scale_factor = lowercase_scale
+            elif char.isdigit():
+                scale_factor = numbers_scale
+            else:
+                scale_factor = symbols_scale
+            
+            updated_character_map[char] = {
+                **char_data,
+                'scale_factor': scale_factor
+            }
+        
+        return JSONResponse({
+            "success": True,
+            "character_map": updated_character_map,
+            "settings": {
+                'uppercase_scale': uppercase_scale,
+                'lowercase_scale': lowercase_scale,
+                'numbers_scale': numbers_scale,
+                'symbols_scale': symbols_scale,
+                'space_width': space_width,
+                'left_bearing': left_bearing,
+                'right_bearing': right_bearing
+            }
         })
         
     except Exception as e:
@@ -242,4 +371,4 @@ async def update_config(settings: Dict):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(app, host="127.0.0.1", port=8000, reload=True)

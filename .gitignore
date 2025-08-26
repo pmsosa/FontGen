@@ -59,7 +59,9 @@ ENV/
 *.temp
 
 #Fonts and Random Usless Stuff
-/temp_files
+*/temp_files
 /deleteme
 *.ttf
 *.png
+*/uploads
+*/downloads

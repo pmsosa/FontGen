@@ -164,6 +164,15 @@
                     <input type="text" class="form-control" id="preview-text-input" 
                            placeholder="Type your text here..." 
                            value="The quick brown fox jumps over the lazy dog">
+                    <div class="mt-2">
+                        <small class="text-muted">Try these examples:</small>
+                        <div class="d-flex gap-2 flex-wrap mt-1">
+                            <button class="btn btn-outline-secondary btn-sm" onclick="setPreviewText('Hello World')">Hello World</button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="setPreviewText('The quick brown fox jumps over the lazy dog')">Pangram</button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="setPreviewText('ABCabc123!@#')">Character Mix</button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="setPreviewText('My Custom Font')">My Custom Font</button>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="preview-text" id="preview-display">
@@ -171,6 +180,21 @@
                     <div class="text-center text-muted py-5">
                         <i class="bi bi-fonts display-4"></i>
                         <p class="mt-3">Your font preview will appear here</p>
+                    </div>
+                </div>
+                
+                <!-- Character Coverage (Hidden by default) -->
+                <div id="character-coverage" style="display: none;" class="mt-3">
+                    <div class="card bg-dark border-secondary">
+                        <div class="card-body">
+                            <h6 class="card-title mb-2">
+                                <i class="bi bi-grid-3x3-gap me-1"></i>Character Coverage
+                                <span class="badge bg-primary ms-2" id="coverage-count">0</span>
+                            </h6>
+                            <div id="coverage-grid" class="d-flex flex-wrap gap-1">
+                                <!-- Character coverage will be shown here -->
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -246,6 +270,7 @@
 // Global variables
 let uploadedFilePath = null;
 let currentSvgDir = null;
+let characterMap = {};
 let fontSettings = {
     uppercase_scale: 4.0,
     lowercase_scale: 2.8,
@@ -284,7 +309,10 @@ function initializeEventListeners() {
     sliders.forEach(id => {
         const slider = document.getElementById(id);
         if (slider) {
-            slider.addEventListener('input', updateSliderValues);
+            slider.addEventListener('input', function() {
+                updateSliderValues();
+                updatePreviewLive();
+            });
         }
     });
     
@@ -319,32 +347,63 @@ function handleFileSelect(e) {
 }
 
 async function handleFile(file) {
+    console.log('File selected:', file.name, file.type, file.size);
+    
     if (!file.type.startsWith('image/')) {
         alert('Please select an image file.');
         return;
     }
     
+    // Show upload progress
+    const uploadStatus = document.getElementById('upload-status');
+    uploadStatus.style.display = 'block';
+    uploadStatus.innerHTML = `
+        <div class="alert alert-info">
+            <i class="bi bi-cloud-upload me-2"></i>
+            Uploading ${file.name}...
+            <div class="spinner-border spinner-border-sm ms-2" role="status"></div>
+        </div>
+    `;
+    
     const formData = new FormData();
     formData.append('file', file);
     
     try {
+        console.log('Uploading file...');
         const response = await fetch('/api/upload-image', {
             method: 'POST',
             body: formData
         });
         
+        console.log('Upload response:', response.status);
         const result = await response.json();
+        console.log('Upload result:', result);
         
         if (result.success) {
             uploadedFilePath = result.file_path;
-            document.getElementById('upload-status').style.display = 'block';
-            document.getElementById('upload-filename').textContent = result.filename;
+            uploadStatus.innerHTML = `
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle me-2"></i>
+                    <span id="upload-filename">${result.filename} uploaded successfully!</span>
+                </div>
+            `;
             document.getElementById('generate-preview').disabled = false;
         } else {
-            alert('Upload failed: ' + result.detail);
+            uploadStatus.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-x-circle me-2"></i>
+                    Upload failed: ${result.detail || 'Unknown error'}
+                </div>
+            `;
         }
     } catch (error) {
-        alert('Upload error: ' + error.message);
+        console.error('Upload error:', error);
+        uploadStatus.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-x-circle me-2"></i>
+                Upload error: ${error.message}
+            </div>
+        `;
     }
 }
 
@@ -381,10 +440,16 @@ async function generatePreview() {
         
         if (result.success) {
             currentSvgDir = result.svg_dir;
+            characterMap = result.character_map;
+            fontSettings = result.settings;
+            
             document.getElementById('preview-section').style.display = 'block';
             document.getElementById('generate-font').disabled = false;
             
-            // Update preview display
+            // Show character coverage
+            showCharacterCoverage();
+            
+            // Update preview display with SVG characters
             updatePreview();
             
             // Scroll to preview
@@ -496,20 +561,168 @@ function updatePreview() {
     const previewText = document.getElementById('preview-text-input').value;
     const previewDisplay = document.getElementById('preview-display');
     
-    if (currentSvgDir) {
-        // For now, just show text preview
-        // TODO: Implement SVG-based preview with actual characters
+    if (Object.keys(characterMap).length > 0) {
+        // Render text using SVG characters
+        renderSVGText(previewText, previewDisplay);
+    } else {
         previewDisplay.innerHTML = `
-            <div class="text-center">
-                <p style="font-size: 2rem; font-family: monospace; line-height: 1.5;">
-                    ${previewText}
-                </p>
-                <small class="text-muted">
-                    Preview with your custom font characters coming soon!
-                </small>
+            <div class="text-center text-muted py-5">
+                <i class="bi bi-fonts display-4"></i>
+                <p class="mt-3">Your font preview will appear here</p>
             </div>
         `;
     }
+}
+
+function renderSVGText(text, container) {
+    container.innerHTML = '';
+    
+    const svgContainer = document.createElement('div');
+    svgContainer.style.cssText = `
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: center;
+        gap: ${fontSettings.left_bearing + fontSettings.right_bearing}px;
+        line-height: 1.2;
+        min-height: 100px;
+        padding: 20px;
+    `;
+    
+    const baseSize = 60; // Base character size in pixels
+    
+    for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        
+        if (char === ' ') {
+            // Handle spaces
+            const spaceDiv = document.createElement('div');
+            spaceDiv.style.width = `${fontSettings.space_width / 30}px`; // Scale space width
+            spaceDiv.style.height = `${baseSize}px`;
+            svgContainer.appendChild(spaceDiv);
+            continue;
+        }
+        
+        if (char === '\n') {
+            // Handle line breaks
+            const breakDiv = document.createElement('div');
+            breakDiv.style.width = '100%';
+            breakDiv.style.height = '0px';
+            svgContainer.appendChild(breakDiv);
+            continue;
+        }
+        
+        if (characterMap[char]) {
+            const charData = characterMap[char];
+            const scaleFactor = getCharacterScale(char);
+            const charSize = baseSize * (scaleFactor / 4.0); // Normalize to base scale
+            
+            // Create SVG element for character
+            const svgChar = createSVGCharacter(char, charData, charSize);
+            svgContainer.appendChild(svgChar);
+        } else {
+            // Fallback for missing characters
+            const fallback = document.createElement('span');
+            fallback.textContent = char;
+            fallback.style.cssText = `
+                font-size: ${baseSize}px;
+                font-family: monospace;
+                color: #6c757d;
+                display: inline-block;
+            `;
+            svgContainer.appendChild(fallback);
+        }
+    }
+    
+    container.appendChild(svgContainer);
+}
+
+function createSVGCharacter(char, charData, size) {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = `
+        display: inline-block;
+        width: ${size}px;
+        height: ${size}px;
+        vertical-align: baseline;
+    `;
+    
+    if (charData.svg_info && charData.svg_info.paths.length > 0) {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', charData.svg_info.viewbox);
+        svg.setAttribute('width', size);
+        svg.setAttribute('height', size);
+        svg.style.fill = '#ffffff';
+        
+        charData.svg_info.paths.forEach(pathData => {
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', pathData);
+            path.setAttribute('fill', '#ffffff');
+            svg.appendChild(path);
+        });
+        
+        wrapper.appendChild(svg);
+    } else {
+        // Fallback if SVG data is not available
+        wrapper.innerHTML = `<span style="font-size: ${size}px; color: #6c757d;">${char}</span>`;
+    }
+    
+    return wrapper;
+}
+
+function getCharacterScale(char) {
+    if (char.match(/[A-Z]/)) return fontSettings.uppercase_scale;
+    if (char.match(/[a-z]/)) return fontSettings.lowercase_scale;
+    if (char.match(/[0-9]/)) return fontSettings.numbers_scale;
+    return fontSettings.symbols_scale;
+}
+
+function updatePreviewLive() {
+    // Update preview in real-time as sliders change
+    if (Object.keys(characterMap).length > 0) {
+        updatePreview();
+    }
+}
+
+function showCharacterCoverage() {
+    const coverageSection = document.getElementById('character-coverage');
+    const coverageGrid = document.getElementById('coverage-grid');
+    const coverageCount = document.getElementById('coverage-count');
+    
+    coverageGrid.innerHTML = '';
+    
+    // Sort characters for better display
+    const sortedChars = Object.keys(characterMap).sort((a, b) => {
+        // Sort by type: uppercase, lowercase, numbers, symbols
+        if (a.match(/[A-Z]/) && !b.match(/[A-Z]/)) return -1;
+        if (!a.match(/[A-Z]/) && b.match(/[A-Z]/)) return 1;
+        if (a.match(/[a-z]/) && !b.match(/[a-z]/)) return -1;
+        if (!a.match(/[a-z]/) && b.match(/[a-z]/)) return 1;
+        if (a.match(/[0-9]/) && !b.match(/[0-9]/)) return -1;
+        if (!a.match(/[0-9]/) && b.match(/[0-9]/)) return 1;
+        return a.localeCompare(b);
+    });
+    
+    sortedChars.forEach(char => {
+        const charBox = document.createElement('span');
+        charBox.className = 'badge bg-secondary me-1 mb-1';
+        charBox.style.cssText = 'font-size: 0.8rem; cursor: pointer;';
+        charBox.textContent = char === ' ' ? '␣' : char;
+        charBox.title = `Click to preview "${char}"`;
+        
+        charBox.addEventListener('click', () => {
+            setPreviewText(char.repeat(10)); // Show character repeated
+        });
+        
+        coverageGrid.appendChild(charBox);
+    });
+    
+    coverageCount.textContent = sortedChars.length;
+    coverageSection.style.display = 'block';
+}
+
+function setPreviewText(text) {
+    document.getElementById('preview-text-input').value = text;
+    updatePreview();
 }
 
 function resetDefaults() {
@@ -522,6 +735,7 @@ function resetDefaults() {
     document.getElementById('right-bearing').value = 25;
     
     updateSliderValues();
+    updatePreviewLive();
 }
 </script>
 {% endblock %}

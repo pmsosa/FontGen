@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-dark text-light p-4">
+    <div class="container">
+        <h2>File Upload Test</h2>
+        
+        <div class="card bg-dark border-secondary">
+            <div class="card-body">
+                <form id="upload-form">
+                    <div class="mb-3">
+                        <label for="file-input" class="form-label">Select Image File:</label>
+                        <input type="file" class="form-control" id="file-input" accept="image/*">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </form>
+                
+                <div id="result" class="mt-3" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('upload-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('file-input');
+            const file = fileInput.files[0];
+            const result = document.getElementById('result');
+            
+            if (!file) {
+                alert('Please select a file');
+                return;
+            }
+            
+            console.log('Uploading file:', file.name, file.type, file.size);
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            result.style.display = 'block';
+            result.innerHTML = '<div class="alert alert-info">Uploading...</div>';
+            
+            try {
+                const response = await fetch('/api/upload-image', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                if (data.success) {
+                    result.innerHTML = `
+                        <div class="alert alert-success">
+                            <h5>Upload Successful!</h5>
+                            <p><strong>File ID:</strong> ${data.file_id}</p>
+                            <p><strong>Filename:</strong> ${data.filename}</p>
+                            <p><strong>Path:</strong> ${data.file_path}</p>
+                        </div>
+                    `;
+                } else {
+                    result.innerHTML = `
+                        <div class="alert alert-danger">
+                            <h5>Upload Failed</h5>
+                            <p>${data.detail || 'Unknown error'}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                result.innerHTML = `
+                    <div class="alert alert-danger">
+                        <h5>Upload Error</h5>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
