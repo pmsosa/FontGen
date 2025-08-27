@@ -58,8 +58,31 @@ ENV/
 *.tmp
 *.temp
 
-#Fonts and Random Usless Stuff
-/temp_files
-/deleteme
+# Fonts and generated files
 *.ttf
 *.png
+
+# Temporary files and uploads
+temp_files/
+*/temp_files/
+uploads/
+*/uploads/
+downloads/ 
+*/downloads/
+
+# Generated templates
+font_template*
+*_template*
+
+# Old/experimental files
+deleteme/
+*/deleteme/
+
+# Virtual environments
+venv/
+*/venv/
+
+# Test artifacts
+test_*.png
+test_*.svg
+test_image.*
