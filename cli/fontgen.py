@@ -33,8 +33,13 @@ class FontGeneratorPotrace:
         for set_name, set_data in char_sets.items():
             for char in set_data['characters']:
                 self.characters.append(char)
+                
+                # Check for individual scaling override
+                individual_scaling = set_data.get('individual_scaling', {})
+                scale_factor = individual_scaling.get(char, set_data['scale_factor'])
+                
                 self.char_properties[char] = {
-                    'scale_factor': set_data['scale_factor'],
+                    'scale_factor': scale_factor,
                     'baseline_offset': set_data['baseline_offset'],
                     'set': set_name
                 }

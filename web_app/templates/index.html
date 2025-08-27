@@ -30,7 +30,7 @@
                     <h5>Drop your filled template here</h5>
                     <p class="text-muted">Or click to browse files</p>
                     <input type="file" id="file-input" accept="image/*" style="display: none;">
-                    <button class="btn btn-outline-primary mt-2" onclick="document.getElementById('file-input').click()">
+                    <button class="btn btn-outline-primary mt-2" onclick="event.stopPropagation(); console.log('Browse button clicked'); document.getElementById('file-input').click()">
                         Browse Files
                     </button>
                 </div>
@@ -292,11 +292,34 @@ function initializeEventListeners() {
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('file-input');
     
-    dropZone.addEventListener('click', () => fileInput.click());
+    console.log('Initializing event listeners');
+    console.log('Drop zone element:', dropZone);
+    console.log('File input element:', fileInput);
+    
+    if (!dropZone || !fileInput) {
+        console.error('Could not find required elements!');
+        return;
+    }
+    
+    dropZone.addEventListener('click', () => {
+        console.log('Drop zone clicked, triggering file input');
+        console.log('File input before click:', fileInput);
+        console.log('File input files before click:', fileInput.files);
+        fileInput.click();
+        
+        // Test immediately after click
+        setTimeout(() => {
+            console.log('File input files after click (delayed):', fileInput.files);
+        }, 1000);
+    });
     dropZone.addEventListener('dragover', handleDragOver);
     dropZone.addEventListener('dragleave', handleDragLeave);
     dropZone.addEventListener('drop', handleDrop);
+    
+    // Add multiple ways to catch file selection
     fileInput.addEventListener('change', handleFileSelect);
+    fileInput.addEventListener('input', handleFileSelect);
+    fileInput.onchange = handleFileSelect;
     
     // Buttons
     document.getElementById('generate-preview').addEventListener('click', generatePreview);
@@ -340,9 +363,14 @@ function handleDrop(e) {
 }
 
 function handleFileSelect(e) {
+    console.log('File input change event triggered');
+    console.log('Files:', e.target.files);
     const files = e.target.files;
     if (files.length > 0) {
+        console.log('File selected:', files[0]);
         handleFile(files[0]);
+    } else {
+        console.log('No files selected');
     }
 }
 
@@ -646,21 +674,40 @@ function createSVGCharacter(char, charData, size) {
         vertical-align: baseline;
     `;
     
-    if (charData.svg_info && charData.svg_info.paths.length > 0) {
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('viewBox', charData.svg_info.viewbox);
-        svg.setAttribute('width', size);
-        svg.setAttribute('height', size);
-        svg.style.fill = '#ffffff';
+    if (charData.svg_content) {
+        // Use the complete SVG content and modify it
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = charData.svg_content;
+        const svg = tempDiv.querySelector('svg');
         
-        charData.svg_info.paths.forEach(pathData => {
-            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            path.setAttribute('d', pathData);
-            path.setAttribute('fill', '#ffffff');
-            svg.appendChild(path);
-        });
-        
-        wrapper.appendChild(svg);
+        if (svg) {
+            // Update SVG size
+            svg.setAttribute('width', size);
+            svg.setAttribute('height', size);
+            
+            // Make sure all paths are black
+            const paths = svg.querySelectorAll('path');
+            paths.forEach(path => {
+                path.setAttribute('fill', '#000000');
+            });
+            
+            wrapper.appendChild(svg);
+        } else {
+            // Fallback to old method if SVG parsing fails
+            const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svgEl.setAttribute('viewBox', charData.svg_info.viewbox);
+            svgEl.setAttribute('width', size);
+            svgEl.setAttribute('height', size);
+            
+            charData.svg_info.paths.forEach(pathData => {
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', pathData);
+                path.setAttribute('fill', '#000000');
+                svgEl.appendChild(path);
+            });
+            
+            wrapper.appendChild(svgEl);
+        }
     } else {
         // Fallback if SVG data is not available
         wrapper.innerHTML = `<span style="font-size: ${size}px; color: #6c757d;">${char}</span>`;
@@ -684,11 +731,15 @@ function updatePreviewLive() {
 }
 
 function showCharacterCoverage() {
+    console.log('showCharacterCoverage called with characterMap:', characterMap);
     const coverageSection = document.getElementById('character-coverage');
     const coverageGrid = document.getElementById('coverage-grid');
     const coverageCount = document.getElementById('coverage-count');
     
     coverageGrid.innerHTML = '';
+    
+    // Make coverage section visible
+    coverageSection.style.display = 'block';
     
     // Sort characters for better display
     const sortedChars = Object.keys(characterMap).sort((a, b) => {

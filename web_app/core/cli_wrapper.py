@@ -120,7 +120,7 @@ class CLIWrapper:
     def generate_font_preview(self, image_path: str, font_name: str, settings: Dict = None) -> Dict:
         """Generate font preview (SVG files) using CLI
         
-        This runs the CLI up to SVG generation but doesn't create the final TTF
+        This generates the full font but extracts the SVG files for preview
         """
         
         # Update CLI config if settings provided
@@ -133,32 +133,41 @@ class CLIWrapper:
         shutil.copy2(image_path, cli_image_path)
         
         try:
-            args = ["generate", cli_image_path, "--name", font_name, "--svg-only"]
+            # Generate full font - CLI creates SVGs as intermediate step
+            args = ["generate", cli_image_path, "--name", font_name]
             result = self._run_cli_command(args, timeout=120)
             
-            if result["success"]:
-                # Look for generated SVG directory
-                svg_dir = os.path.join(self.cli_dir, f"temp_files/{font_name}_svg")
-                if os.path.exists(svg_dir):
-                    # Move SVG directory to web app temp location
-                    web_svg_dir = f"temp_files/{font_name}_svg"
-                    if os.path.exists(web_svg_dir):
-                        shutil.rmtree(web_svg_dir)
-                    shutil.move(svg_dir, web_svg_dir)
-                    
-                    # Read SVG files and create character map
-                    character_map = self._build_character_map(web_svg_dir)
-                    
-                    return {
-                        "success": True,
-                        "svg_dir": web_svg_dir,
-                        "character_map": character_map,
-                        "settings": settings or {}
-                    }
+            # Check for SVG directory even if CLI had some warnings
+            svg_dir = os.path.join(self.cli_dir, f"temp_files")
+            svg_subdir = None
+            
+            # Find the SVG directory (it might have different naming)
+            if os.path.exists(svg_dir):
+                for item in os.listdir(svg_dir):
+                    if item.endswith("_svg") and font_name in item:
+                        svg_subdir = os.path.join(svg_dir, item)
+                        break
+            
+            if svg_subdir and os.path.exists(svg_subdir):
+                # Move SVG directory to web app temp location
+                web_svg_dir = f"temp_files/{font_name}_svg"
+                if os.path.exists(web_svg_dir):
+                    shutil.rmtree(web_svg_dir)
+                shutil.move(svg_subdir, web_svg_dir)
+                
+                # Read SVG files and create character map
+                character_map = self._build_character_map(web_svg_dir)
+                
+                return {
+                    "success": True,
+                    "svg_dir": web_svg_dir,
+                    "character_map": character_map,
+                    "settings": settings or {}
+                }
             
             return {
                 "success": False, 
-                "error": result.get("stderr", "Font preview generation failed")
+                "error": result.get("stderr", "Font preview generation failed - no SVG files found")
             }
             
         finally:
@@ -300,8 +309,15 @@ class CLIWrapper:
             'slash': '/', 'backslash': '\\', 'colon': ':',
             'asterisk': '*', 'question': '?', 'quote': '"',
             'apostrophe': "'", 'less': '<', 'greater': '>',
-            'pipe': '|', 'space': ' '
+            'pipe': '|', 'space': ' ', 'exclamation': '!',
+            'hash': '#', 'ampersand': '&', 'at': '@',
+            'percent': '%', 'greater': '>', 'less': '<',
+            'backtick': '`', 'tilde': '~'
         }
+        
+        # Handle Unicode decimal format (e.g., "0048" -> "0")
+        if filename.isdigit():
+            return chr(int(filename))
         
         # Handle char_XXX format (ASCII codes)
         if filename.startswith('char_') and filename[5:].isdigit():
@@ -332,7 +348,9 @@ class CLIWrapper:
         
         for _, char_set in char_sets.items():
             if char in char_set.get('characters', []):
-                return char_set.get('scale_factor', 3.0)
+                # Check for individual scaling override
+                individual_scaling = char_set.get('individual_scaling', {})
+                return individual_scaling.get(char, char_set.get('scale_factor', 3.0))
         
         return 3.0  # Default scale
     
@@ -346,6 +364,6 @@ class CLIWrapper:
                 "symbols": ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '-', '_', '=', '+', '[', ']', '{', '}', '|', '\\', ';', ':', '"', "'", '<', '>', ',', '.', '/', '?', '`', '~']
             },
             "Spanish Extensions": {
-                "accented": ['á', 'é', 'í', 'ó', 'ú', 'ü', 'ñ', 'Á', 'É', 'Í', 'Ó', 'Ú', 'Ü', 'Ñ', '¿', '¡']
+                "spanish_accented": ['á', 'é', 'í', 'ó', 'ú', 'ü', 'ñ', 'Á', 'É', 'Í', 'Ó', 'Ú', 'Ü', 'Ñ', '¿', '¡']
             }
         }
