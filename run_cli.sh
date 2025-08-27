@@ -43,5 +43,21 @@ echo ""
 if [ $# -eq 0 ]; then
     python fontgen.py --help
 else
-    python fontgen.py "$@"
+    # Convert relative paths to absolute paths before changing directory
+    args=()
+    for arg in "$@"; do
+        if [[ "$arg" =~ \.(png|jpg|jpeg|bmp|tiff)$ ]] && [[ ! "$arg" =~ ^/ ]]; then
+            # Convert relative image path to absolute path
+            abs_path="$(cd "$(dirname "../$arg")" 2>/dev/null && pwd)/$(basename "$arg")"
+            if [ -f "$abs_path" ]; then
+                args+=("$abs_path")
+            else
+                args+=("$arg")  # Keep original if conversion fails
+            fi
+        else
+            args+=("$arg")
+        fi
+    done
+    
+    python fontgen.py "${args[@]}"
 fi

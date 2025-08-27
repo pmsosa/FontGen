@@ -175,50 +175,44 @@ class CLIWrapper:
             if os.path.exists(cli_image_path):
                 os.remove(cli_image_path)
     
-    def generate_final_font(self, svg_dir: str, font_name: str) -> Optional[str]:
-        """Generate final TTF font from SVG directory using CLI"""
+    def generate_final_font(self, original_image_path: str, font_name: str) -> Optional[str]:
+        """Generate final TTF font from original image using CLI"""
         
-        # Copy SVG directory to CLI temp location
-        cli_svg_dir = os.path.join(self.cli_dir, f"temp_files/{font_name}_svg")
-        if os.path.exists(cli_svg_dir):
-            import shutil
-            shutil.rmtree(cli_svg_dir)
-        
+        # Copy original image to CLI directory
         import shutil
-        shutil.copytree(svg_dir, cli_svg_dir)
+        cli_image_path = os.path.join(self.cli_dir, f"temp_{font_name}.png")
+        try:
+            shutil.copy2(original_image_path, cli_image_path)
+        except FileNotFoundError:
+            print(f"Original image not found: {original_image_path}")
+            return None
         
         try:
-            # Create a dummy image file (CLI expects it but won't use it for final generation)
-            dummy_image = os.path.join(self.cli_dir, f"temp_{font_name}_dummy.png")
-            try:
-                from PIL import Image
-                img = Image.new('RGB', (100, 100), color='white')
-                img.save(dummy_image)
-            except ImportError:
-                # Fallback - create a minimal PNG file
-                with open(dummy_image, 'wb') as f:
-                    f.write(b'')  # Empty file as placeholder
-            
-            args = ["generate", dummy_image, "--name", font_name, "--from-svg", cli_svg_dir]
+            # Generate final TTF font using CLI
+            args = ["generate", cli_image_path, "--name", font_name]
             result = self._run_cli_command(args, timeout=180)
             
             if result["success"]:
                 # Look for generated TTF
                 cli_font_path = os.path.join(self.cli_dir, f"{font_name}.ttf")
                 if os.path.exists(cli_font_path):
+                    # Ensure downloads directory exists  
+                    web_app_dir = os.path.dirname(os.path.dirname(__file__))  # Go up from core/ to web_app/
+                    downloads_dir = os.path.join(web_app_dir, "downloads")
+                    os.makedirs(downloads_dir, exist_ok=True)
+                    
                     # Move to web app downloads
-                    web_font_path = f"downloads/{font_name}.ttf"
+                    web_font_path = os.path.join(downloads_dir, f"{font_name}.ttf")
                     shutil.move(cli_font_path, web_font_path)
-                    return web_font_path
+                    return f"downloads/{font_name}.ttf"
             
+            print(f"CLI generation failed: {result.get('stderr', 'Unknown error')}")
             return None
             
         finally:
-            # Cleanup
-            if os.path.exists(dummy_image):
-                os.remove(dummy_image)
-            if os.path.exists(cli_svg_dir):
-                shutil.rmtree(cli_svg_dir)
+            # Cleanup temp image
+            if os.path.exists(cli_image_path):
+                os.remove(cli_image_path)
     
     def _update_cli_config(self, settings: Dict):
         """Update CLI config.json with new settings"""

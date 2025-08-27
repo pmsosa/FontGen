@@ -214,13 +214,13 @@ async def update_preview_settings(
 
 @app.post("/api/generate-font")
 async def generate_final_font(
-    svg_dir: str = Form(...),
+    original_image_path: str = Form(...),
     font_name: str = Form(...)
 ):
-    """Generate final TTF font from SVGs"""
+    """Generate final TTF font from original image"""
     try:
         # Generate final TTF font using CLI
-        font_path = cli_wrapper.generate_final_font(svg_dir, font_name)
+        font_path = cli_wrapper.generate_final_font(original_image_path, font_name)
         
         if not font_path:
             raise HTTPException(status_code=500, detail="Failed to generate font")

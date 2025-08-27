@@ -116,6 +116,23 @@
         .loading .btn-text {
             display: none;
         }
+
+        /* Settings Sidebar Sticky */
+        .settings-sidebar {
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        /* Responsive adjustments for iPad */
+        @media (max-width: 991.98px) {
+            .settings-sidebar {
+                position: static;
+                max-height: none;
+                overflow-y: visible;
+            }
+        }
     </style>
     
     {% block extra_css %}{% endblock %}
@@ -125,7 +142,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom">
         <div class="container">
             <a class="navbar-brand" href="/" onclick="event.preventDefault(); location.reload(true);">
-                <i class="bi bi-fonts me-2"></i>FontGen
+                <i class="bi bi-vector-pen me-2"></i>FontGen
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -142,6 +159,11 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/template-generator">
                             <i class="bi bi-grid me-1"></i>Template Generator
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#instructionsModal">
+                            <i class="bi bi-question-circle me-1"></i>Instructions
                         </a>
                     </li>
                 </ul>
@@ -166,11 +188,62 @@
     <footer class="bg-dark border-top mt-5 py-4">
         <div class="container text-center text-muted">
             <p class="mb-0">
-                <i class="bi bi-heart-fill text-danger me-1"></i>
                 <i class="bi bi-tsunami"></i> Made with Good Vibes from Isla Vista. By Pedro, Claude, and Gemini. <i class="bi bi-tsunami"></i>
             </p>
         </div>
     </footer>
+
+    <!-- Instructions Modal -->
+    <div class="modal fade" id="instructionsModal" tabindex="-1" aria-labelledby="instructionsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="instructionsModalLabel">
+                        <i class="bi bi-question-circle me-2"></i>How to Use FontGen
+                    </h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-4">
+                        <div class="col-md-6 text-center">
+                            <div class="bg-primary rounded-circle p-3 d-inline-flex mb-3">
+                                <i class="bi bi-grid-3x3 fs-3 text-white"></i>
+                            </div>
+                            <h6>1. Generate Template</h6>
+                            <p class="text-muted small">Create a template with character boxes for your handwriting</p>
+                        </div>
+                        <div class="col-md-6 text-center">
+                            <div class="bg-success rounded-circle p-3 d-inline-flex mb-3">
+                                <i class="bi bi-pencil fs-3 text-white"></i>
+                            </div>
+                            <h6>2. Draw Characters</h6>
+                            <p class="text-muted small">Fill in each box with your handwriting using a drawing app or print it out</p>
+                        </div>
+                        <div class="col-md-6 text-center">
+                            <div class="bg-info rounded-circle p-3 d-inline-flex mb-3">
+                                <i class="bi bi-cloud-upload fs-3 text-white"></i>
+                            </div>
+                            <h6>3. Upload & Preview</h6>
+                            <p class="text-muted small">Upload your filled template and adjust font settings in real-time</p>
+                        </div>
+                        <div class="col-md-6 text-center">
+                            <div class="bg-warning rounded-circle p-3 d-inline-flex mb-3">
+                                <i class="bi bi-download fs-3 text-white"></i>
+                            </div>
+                            <h6>4. Generate Font</h6>
+                            <p class="text-muted small">Download your custom TTF font and install it on your system!</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a href="/template-generator" class="btn btn-primary">
+                        <i class="bi bi-arrow-right me-2"></i>Start with Template Generator
+                    </a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
