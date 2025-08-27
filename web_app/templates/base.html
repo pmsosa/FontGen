@@ -133,6 +133,35 @@
                 overflow-y: visible;
             }
         }
+        
+        /* Small form range for preview controls */
+        .form-range-sm {
+            height: 0.75rem;
+        }
+        
+        .form-range-sm::-webkit-slider-thumb {
+            width: 0.875rem;
+            height: 0.875rem;
+        }
+        
+        .form-range-sm::-moz-range-thumb {
+            width: 0.875rem;
+            height: 0.875rem;
+        }
+        
+        /* Disabled slider styling */
+        .form-range:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .form-range:disabled::-webkit-slider-thumb {
+            cursor: not-allowed;
+        }
+        
+        .form-range:disabled::-moz-range-thumb {
+            cursor: not-allowed;
+        }
     </style>
     
     {% block extra_css %}{% endblock %}

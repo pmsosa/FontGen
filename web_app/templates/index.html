@@ -164,7 +164,7 @@
                 </h5>
             </div>
             <div class="card-body">
-                <div class="mb-3">
+                <div class="mb-4">
                     <label for="preview-text-input" class="form-label">Sample Text</label>
                     <input type="text" class="form-control" id="preview-text-input" 
                            placeholder="Type your text here..." 
@@ -177,6 +177,7 @@
                             <button class="btn btn-outline-secondary btn-sm" onclick="setPreviewText('ABCabc123!@#')">Character Mix</button>
                             <button class="btn btn-outline-secondary btn-sm" onclick="setPreviewText('My Custom Font')">My Custom Font</button>
                         </div>
+                        <small class="text-muted d-block mt-2">Preview shows exactly how your final font will look</small>
                     </div>
                 </div>
                 
@@ -241,6 +242,7 @@ let fontSettings = {
 document.addEventListener('DOMContentLoaded', function() {
     initializeEventListeners();
     updateSliderValues();
+    
 });
 
 function initializeEventListeners() {
@@ -278,10 +280,15 @@ function initializeEventListeners() {
     fileInput.onchange = handleFileSelect;
     
     // Buttons
-    document.getElementById('generate-preview').addEventListener('click', generatePreview);
-    document.getElementById('generate-font').addEventListener('click', generateFont);
-    document.getElementById('toggle-advanced').addEventListener('click', toggleAdvanced);
-    document.getElementById('reset-defaults').addEventListener('click', resetDefaults);
+    const generatePreviewBtn = document.getElementById('generate-preview');
+    const generateFontBtn = document.getElementById('generate-font');
+    const toggleAdvancedBtn = document.getElementById('toggle-advanced');
+    const resetDefaultsBtn = document.getElementById('reset-defaults');
+    
+    if (generatePreviewBtn) generatePreviewBtn.addEventListener('click', generatePreview);
+    if (generateFontBtn) generateFontBtn.addEventListener('click', generateFont);
+    if (toggleAdvancedBtn) toggleAdvancedBtn.addEventListener('click', toggleAdvanced);
+    if (resetDefaultsBtn) resetDefaultsBtn.addEventListener('click', resetDefaults);
     
     // Sliders
     const sliders = ['uppercase-scale', 'lowercase-scale', 'numbers-scale', 'symbols-scale', 'space-width', 'left-bearing', 'right-bearing'];
@@ -296,7 +303,8 @@ function initializeEventListeners() {
     });
     
     // Preview text input
-    document.getElementById('preview-text-input').addEventListener('input', updatePreview);
+    const previewTextInput = document.getElementById('preview-text-input');
+    if (previewTextInput) previewTextInput.addEventListener('input', updatePreview);
 }
 
 function handleDragOver(e) {
@@ -516,13 +524,20 @@ function toggleAdvanced() {
         '<i class="bi bi-gear-fill me-1"></i>Basic';
 }
 
+function updateSliderValue(elementId, value) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.textContent = value;
+    }
+}
+
 function updateSliderValues() {
     const sliders = {
-        'uppercase-scale': 'uppercase-value',
-        'lowercase-scale': 'lowercase-value',
-        'numbers-scale': 'numbers-value',
-        'symbols-scale': 'symbols-value',
-        'space-width': 'space-value',
+        'uppercase-scale': 'uppercase-scale-value',
+        'lowercase-scale': 'lowercase-scale-value',
+        'numbers-scale': 'numbers-scale-value',
+        'symbols-scale': 'symbols-scale-value',
+        'space-width': 'space-width-value',
         'left-bearing': 'left-bearing-value',
         'right-bearing': 'right-bearing-value'
     };
@@ -532,7 +547,12 @@ function updateSliderValues() {
         const valueDisplay = document.getElementById(valueId);
         
         if (slider && valueDisplay) {
-            valueDisplay.textContent = slider.value;
+            let displayValue = slider.value;
+            // Add 'x' suffix for scale values
+            if (sliderId.includes('scale')) {
+                displayValue += 'x';
+            }
+            valueDisplay.textContent = displayValue;
             
             // Update fontSettings
             const settingKey = sliderId.replace('-', '_');
@@ -562,27 +582,37 @@ function renderSVGText(text, container) {
     container.innerHTML = '';
     
     const svgContainer = document.createElement('div');
+    svgContainer.className = 'preview-content';
+    
+    // Render exactly as the final font will look - no extra spacing or controls
+    const baseSize = 60; // Fixed size for consistent preview
+    
     svgContainer.style.cssText = `
         display: flex;
         flex-wrap: wrap;
         align-items: baseline;
         justify-content: center;
-        gap: ${fontSettings.left_bearing + fontSettings.right_bearing}px;
+        gap: 0px;
         line-height: 1.2;
         min-height: 100px;
         padding: 20px;
+        font-size: 48px;
+        letter-spacing: normal;
     `;
-    
-    const baseSize = 60; // Base character size in pixels
     
     for (let i = 0; i < text.length; i++) {
         const char = text[i];
         
         if (char === ' ') {
-            // Handle spaces
+            // Handle space character with proper width matching font settings
             const spaceDiv = document.createElement('div');
-            spaceDiv.style.width = `${fontSettings.space_width / 30}px`; // Scale space width
-            spaceDiv.style.height = `${baseSize}px`;
+            const spaceWidth = (fontSettings.space_width / 1000) * baseSize; // Convert from font units to pixels
+            spaceDiv.style.cssText = `
+                display: inline-block;
+                width: ${spaceWidth}px;
+                height: ${baseSize}px;
+                vertical-align: baseline;
+            `;
             svgContainer.appendChild(spaceDiv);
             continue;
         }
@@ -623,11 +653,20 @@ function renderSVGText(text, container) {
 
 function createSVGCharacter(char, charData, size) {
     const wrapper = document.createElement('div');
+    
+    // Use minimal spacing that matches typical font rendering
+    // Font bearings of 25 units at 60px base = way too much visual space
+    // Scale bearings down significantly for natural text appearance
+    const scaledLeftBearing = (fontSettings.left_bearing * (size / 60)) * 0.1; // Much smaller
+    const scaledRightBearing = (fontSettings.right_bearing * (size / 60)) * 0.1;
+    
     wrapper.style.cssText = `
         display: inline-block;
-        width: ${size}px;
+        width: auto;
         height: ${size}px;
         vertical-align: baseline;
+        margin: 0;
+        padding: 0;
     `;
     
     if (charData.svg_content) {
@@ -744,5 +783,6 @@ function resetDefaults() {
     updateSliderValues();
     updatePreviewLive();
 }
+
 </script>
 {% endblock %}
