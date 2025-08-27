@@ -28,7 +28,7 @@ os.makedirs("downloads", exist_ok=True)
 os.makedirs("temp_files", exist_ok=True)
 
 # Global font generator instance  
-font_gen = FontGenerator(os.path.join("..", "config.json"))
+font_gen = FontGenerator(os.path.join("..", "cli", "config.json"))
 
 @app.get("/")
 async def home(request: Request):

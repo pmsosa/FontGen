@@ -7,12 +7,12 @@ echo "🚀 Starting FontGen Web UI..."
 echo "============================="
 
 # Check if we're in the right directory
-if [ ! -f "main.py" ]; then
-    echo "❌ Please run this script from the web_app directory"
-    echo "   cd /path/to/FontGen/web_app"
-    echo "   ./startweb.sh"
+if [ ! -d "web_app" ]; then
+    echo "❌ Please run this script from the FontGen root directory"
     exit 1
 fi
+
+cd web_app
 
 # Check if virtual environment exists
 if [ ! -d "venv" ]; then

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# FontGen with Potrace - Best TTF generation for M2 Mac
+# FontGen CLI - Command Line Font Generator
 # Uses potrace for superior bitmap-to-vector conversion
 
 GREEN='\033[0;32m'
@@ -8,8 +8,16 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-echo -e "${GREEN}FontGen with Potrace - Superior TTF Generation${NC}"
-echo "=================================================="
+echo -e "${GREEN}FontGen CLI - Superior TTF Generation${NC}"
+echo "============================================"
+
+# Check if we're in the right directory
+if [ ! -d "cli" ]; then
+    echo -e "${RED}❌ Please run this script from the FontGen root directory${NC}"
+    exit 1
+fi
+
+cd cli
 
 # Check if potrace is installed
 if ! command -v potrace &> /dev/null; then

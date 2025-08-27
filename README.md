@@ -1,44 +1,58 @@
 # FontGen - Custom Font Generator
 
-Create your own TTF fonts by drawing characters in templates! Uses advanced potrace vectorization for professional-quality results.
+Turn your handwriting into professional TTF fonts using advanced vectorization! Available as both a **modern web UI** and **command-line interface**.
 
-## Quick Start
+## 🚀 Quick Start
 
+### Web UI (Recommended)
 1. **Install dependencies:**
    ```bash
    # macOS
    brew install fontforge potrace
-   
-   # Linux (Ubuntu/Debian)  
-   sudo apt install fontforge potrace
    ```
 
-2. **Generate a template:**
+2. **Start the web interface:**
    ```bash
-   ./start.sh template --convert-to-png
+   ./run_web.sh
    ```
 
-3. **Draw your characters:**
-   - Import `font_template.png` into Procreate, Photoshop, or any drawing app
-   - Draw your characters in each labeled box
-   - Export as PNG
+3. **Open your browser:**
+   - Navigate to http://localhost:8000
+   - Generate template → Draw characters → Upload → Generate font!
 
-4. **Generate your font:**
+### Command Line
+1. **Run CLI:**
    ```bash
-   ./start.sh generate my_drawing.png --name MyCustomFont
+   ./run_cli.sh template --convert-to-png
+   ./run_cli.sh generate my_drawing.png --name MyCustomFont
    ```
 
-5. **Install your font:**
-   - Double-click the generated `MyCustomFont_potrace.ttf` file
-   - Click "Install Font" in Font Book
-   - Use your font in any app!
+## 🏗️ Project Structure
+
+```
+FontGen/
+├── cli/                    # Command-line interface
+│   ├── fontgen.py         # CLI font generator
+│   ├── config.json        # Font configuration
+│   └── requirements.txt   # CLI dependencies
+├── web_app/               # Web interface
+│   ├── main.py           # FastAPI backend
+│   ├── core/             # Core font generation logic
+│   ├── templates/        # HTML templates
+│   └── static/           # Web assets
+├── tests/                 # Test suites
+│   ├── cli/              # CLI tests
+│   ├── webapp/           # Web app tests
+│   └── run_tests.sh      # Test runner
+├── run_cli.sh            # Start CLI
+└── run_web.sh            # Start web UI
+```
 
 ## Requirements
 
 - **Python 3.6+**
 - **FontForge** - Font generation engine
 - **Potrace** - Superior bitmap-to-vector conversion
-- **Pillow & cairosvg** - Image processing (auto-installed)
 
 ### Installing Dependencies
 
@@ -52,39 +66,44 @@ brew install fontforge potrace
 sudo apt install fontforge potrace
 ```
 
-## Commands
+## 🖥️ Command Line Usage
 
 ### Generate Template
 ```bash
-./start.sh template [--format svg|png] [--output filename] [--convert-to-png]
-```
-
-Creates a template with boxes for each character.
-
-**Options:**
-- `--format svg|png`: Template format (default: svg)
-- `--output filename`: Custom filename (default: font_template)
-- `--convert-to-png`: Create both SVG and high-res PNG versions
-
-**Recommended for Procreate:**
-```bash
-./start.sh template --convert-to-png
+./run_cli.sh template [--format svg|png] [--output filename] [--convert-to-png]
 ```
 
 ### Generate Font
 ```bash
-./start.sh generate <image_file> --name <font_name>
+./run_cli.sh generate <image_file> --name <font_name>
 ```
 
-Converts your filled template into a professional TTF font.
+## 🌐 Web Interface Features
 
-**Arguments:**
-- `image_file`: Path to your filled template image (PNG/JPG)
-- `--name`: Name for your font (e.g., "MyHandwriting")
+- **Real-time Preview** - See your font as you adjust settings
+- **Interactive Sliders** - Live adjustment of character sizes and spacing
+- **Template Generator** - Create custom character templates
+- **Drag & Drop Upload** - Easy file handling
+- **Character Coverage** - Visual feedback of available characters
+
+## 🧪 Testing
+
+Run the comprehensive test suite:
+
+```bash
+# Run all tests
+./tests/run_tests.sh
+
+# Run specific tests
+./tests/run_tests.sh cli      # CLI tests only
+./tests/run_tests.sh webapp   # Web app tests only
+```
+
+**Note:** Web app tests require the server to be running (`./run_web.sh`)
 
 ## Configuration
 
-Font generation is controlled by `config.json`. You can customize:
+Font generation is controlled by `cli/config.json`. You can customize:
 
 - **Character sizing** (uppercase, lowercase, numbers, symbols)
 - **Spacing and metrics**
