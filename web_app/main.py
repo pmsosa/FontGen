@@ -248,6 +248,62 @@ async def update_config(settings: Dict):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/example-template")
+async def get_example_template():
+    """Serve the example template file"""
+    try:
+        example_file_path = Path("uploads/template_6e6e49e9.png")
+        if not example_file_path.exists():
+            raise HTTPException(status_code=404, detail="Example template not found")
+        
+        return FileResponse(
+            path=str(example_file_path),
+            media_type="image/png",
+            filename="example-template.png"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error serving example template: {str(e)}")
+
+@app.get("/api/example-svgs")
+async def get_example_svgs():
+    """Serve the pre-generated SVG data for the example font"""
+    try:
+        svg_dir = Path("temp_files/MyFont_svg")
+        if not svg_dir.exists():
+            raise HTTPException(status_code=404, detail="Example SVG directory not found")
+        
+        # Load all SVG files and create character map
+        character_map = {}
+        
+        for svg_file in svg_dir.glob("*.svg"):
+            try:
+                # Read SVG content
+                with open(svg_file, 'r') as f:
+                    svg_content = f.read()
+                
+                # Convert filename to character (e.g., "0048.svg" -> "0")
+                filename = svg_file.stem  # Gets "0048" from "0048.svg"
+                if filename.isdigit():
+                    char = chr(int(filename))
+                    character_map[char] = {
+                        "svg_content": svg_content,
+                        "filename": filename
+                    }
+                    
+            except Exception as e:
+                print(f"Error processing {svg_file}: {e}")
+                continue
+        
+        return JSONResponse({
+            "success": True,
+            "character_map": character_map,
+            "total_characters": len(character_map),
+            "original_image_path": str(Path("uploads/template_6e6e49e9.png"))
+        })
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error loading example SVGs: {str(e)}")
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
