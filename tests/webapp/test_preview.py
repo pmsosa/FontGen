@@ -114,11 +114,11 @@ def test_fontgen_directly():
     
     try:
         import sys
-        sys.path.append('.')
+        sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "web_app"))
         from core.font_generator import FontGenerator
         
         # Test initialization
-        font_gen = FontGenerator("../config.json")
+        font_gen = FontGenerator("../../cli/config.json")
         print("✅ FontGenerator initialized")
         
         # Test character extraction (this is likely where it fails)

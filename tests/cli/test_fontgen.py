@@ -11,7 +11,7 @@ import sys
 import json
 from pathlib import Path
 from PIL import Image, ImageDraw
-sys.path.append('..')
+sys.path.append('/Users/bullshark/Desktop/Playground/FontGen/cli')
 from fontgen import FontGeneratorPotrace
 
 class TestFontGen(unittest.TestCase):
