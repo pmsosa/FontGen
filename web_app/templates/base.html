@@ -227,6 +227,83 @@
         </div>
     </footer>
 
+    <!-- Character Sizing Modal -->
+    <div class="modal fade" id="characterSizingModal" tabindex="-1" aria-labelledby="characterSizingModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="characterSizingModalLabel">
+                        <i class="bi bi-sliders me-2"></i>Character Sizing: <span id="modal-character">?</span>
+                    </h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            Customize this character's appearance. Changes override category defaults.
+                        </small>
+                    </div>
+                    
+                    <!-- Scale Factor -->
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <small>Scale Factor</small>
+                            <span class="slider-value" id="char-scale-value">4.0x</span>
+                        </div>
+                        <input type="range" class="form-range" id="char-scale" 
+                               min="0.5" max="8.0" step="0.1" value="4.0" 
+                               oninput="updateCharacterSlider('scale', this.value)">
+                        <small class="text-muted">How large this character appears</small>
+                    </div>
+                    
+                    <!-- Baseline Offset -->
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <small>Baseline Offset</small>
+                            <span class="slider-value" id="char-baseline-value">150</span>
+                        </div>
+                        <input type="range" class="form-range" id="char-baseline" 
+                               min="50" max="300" step="5" value="150" 
+                               oninput="updateCharacterSlider('baseline', this.value)">
+                        <small class="text-muted">Vertical positioning of character</small>
+                    </div>
+                    
+                    <!-- Left Bearing -->
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <small>Left Bearing</small>
+                            <span class="slider-value" id="char-left-bearing-value">25</span>
+                        </div>
+                        <input type="range" class="form-range" id="char-left-bearing" 
+                               min="0" max="100" step="1" value="25" 
+                               oninput="updateCharacterSlider('left_bearing', this.value)">
+                        <small class="text-muted">Space before character</small>
+                    </div>
+                    
+                    <!-- Right Bearing -->
+                    <div class="slider-container mb-0">
+                        <div class="slider-label">
+                            <small>Right Bearing</small>
+                            <span class="slider-value" id="char-right-bearing-value">25</span>
+                        </div>
+                        <input type="range" class="form-range" id="char-right-bearing" 
+                               min="0" max="100" step="1" value="25" 
+                               oninput="updateCharacterSlider('right_bearing', this.value)">
+                        <small class="text-muted">Space after character</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" onclick="resetCharacterToDefaults()">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Reset to Default
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="applyCharacterCustomization()">
+                        <i class="bi bi-check-lg me-1"></i>Apply Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Instructions Modal -->
     <div class="modal fade" id="instructionsModal" tabindex="-1" aria-labelledby="instructionsModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">

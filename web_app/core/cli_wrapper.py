@@ -46,7 +46,12 @@ class CLIWrapper:
             if os.path.exists(venv_python):
                 python_cmd = venv_python
             else:
-                python_cmd = "python"
+                # Try to use the main project's virtual environment
+                main_venv_python = os.path.join(web_app_dir, "..", "venv", "bin", "python")
+                if os.path.exists(main_venv_python):
+                    python_cmd = main_venv_python
+                else:
+                    python_cmd = "python"
             
             # Run CLI command
             cmd = [python_cmd, "fontgen.py"] + args
@@ -110,7 +115,12 @@ class CLIWrapper:
         
         if result["success"]:
             # Move generated file to desired location
-            cli_output = f"{self.cli_dir}/{base_name}.svg"
+            # For PNG format, the CLI creates the PNG directly
+            if output_path.endswith('.png'):
+                cli_output = f"{self.cli_dir}/{base_name}.png"
+            else:
+                cli_output = f"{self.cli_dir}/{base_name}.svg"
+            
             if os.path.exists(cli_output):
                 os.rename(cli_output, output_path)
                 return {"success": True, "file_path": output_path}
@@ -175,7 +185,7 @@ class CLIWrapper:
             if os.path.exists(cli_image_path):
                 os.remove(cli_image_path)
     
-    def generate_final_font(self, original_image_path: str, font_name: str) -> Optional[str]:
+    def generate_final_font(self, original_image_path: str, font_name: str, character_customizations: Optional[Dict] = None) -> Optional[str]:
         """Generate final TTF font from original image using CLI"""
         
         # Copy original image to CLI directory
@@ -187,9 +197,26 @@ class CLIWrapper:
             print(f"Original image not found: {original_image_path}")
             return None
         
+        # Create character overrides JSON file if customizations provided
+        overrides_path = None
+        if character_customizations:
+            overrides_path = os.path.join(self.cli_dir, f"temp_{font_name}_overrides.json")
+            try:
+                with open(overrides_path, 'w') as f:
+                    json.dump(character_customizations, f, indent=2)
+                print(f"Created character overrides file: {overrides_path}")
+            except Exception as e:
+                print(f"Error creating overrides file: {e}")
+                overrides_path = None
+
         try:
             # Generate final TTF font using CLI
             args = ["generate", cli_image_path, "--name", font_name]
+            
+            # Add character overrides if available
+            if overrides_path:
+                args.extend(["--character-overrides", os.path.basename(overrides_path)])
+            
             result = self._run_cli_command(args, timeout=180)
             
             if result["success"]:
@@ -213,6 +240,10 @@ class CLIWrapper:
             # Cleanup temp image
             if os.path.exists(cli_image_path):
                 os.remove(cli_image_path)
+            
+            # Cleanup temp overrides file
+            if overrides_path and os.path.exists(overrides_path):
+                os.remove(overrides_path)
     
     def _update_cli_config(self, settings: Dict):
         """Update CLI config.json with new settings"""

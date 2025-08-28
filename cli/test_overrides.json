@@ -1,0 +1,13 @@
+{
+  "P": {
+    "scale_factor": 6.0,
+    "baseline_offset": 200
+  },
+  ".": {
+    "scale_factor": 1.5,
+    "baseline_offset": 100
+  },
+  ",": {
+    "scale_factor": 1.8
+  }
+}

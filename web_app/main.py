@@ -44,6 +44,16 @@ async def template_generator_page(request: Request):
         "character_sets": character_sets
     })
 
+@app.get("/font-test/{font_name}")
+async def font_test_page(request: Request, font_name: str):
+    """Font testing page with real TTF rendering"""
+    font_url = f"/downloads/{font_name}.ttf"
+    return templates.TemplateResponse("font_test.html", {
+        "request": request,
+        "font_name": font_name,
+        "font_url": font_url
+    })
+
 @app.post("/api/generate-template")
 async def generate_template(
     characters: str = Form(...),
@@ -215,12 +225,22 @@ async def update_preview_settings(
 @app.post("/api/generate-font")
 async def generate_final_font(
     original_image_path: str = Form(...),
-    font_name: str = Form(...)
+    font_name: str = Form(...),
+    character_customizations: Optional[str] = Form(None)
 ):
     """Generate final TTF font from original image"""
     try:
+        # Parse character customizations if provided
+        customizations_dict = None
+        if character_customizations:
+            try:
+                customizations_dict = json.loads(character_customizations)
+                print(f"Received character customizations: {customizations_dict}")
+            except json.JSONDecodeError as e:
+                print(f"Error parsing character customizations: {e}")
+        
         # Generate final TTF font using CLI
-        font_path = cli_wrapper.generate_final_font(original_image_path, font_name)
+        font_path = cli_wrapper.generate_final_font(original_image_path, font_name, customizations_dict)
         
         if not font_path:
             raise HTTPException(status_code=500, detail="Failed to generate font")
@@ -228,7 +248,42 @@ async def generate_final_font(
         return JSONResponse({
             "success": True,
             "font_file": f"{font_name}.ttf",
-            "font_url": f"/{font_path}"
+            "font_url": f"/{font_path}",
+            "test_url": f"/font-test/{font_name}"
+        })
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/generate-temp-font")
+async def generate_temp_font(
+    original_image_path: str = Form(...),
+    character_customizations: Optional[str] = Form(None)
+):
+    """Generate temporary TTF font for testing"""
+    try:
+        import uuid
+        temp_name = f"temp_{str(uuid.uuid4())[:8]}"
+        
+        # Parse character customizations if provided
+        customizations_dict = None
+        if character_customizations:
+            try:
+                customizations_dict = json.loads(character_customizations)
+            except json.JSONDecodeError as e:
+                print(f"Error parsing character customizations: {e}")
+        
+        # Generate temporary TTF font using CLI
+        font_path = cli_wrapper.generate_final_font(original_image_path, temp_name, customizations_dict)
+        
+        if not font_path:
+            raise HTTPException(status_code=500, detail="Failed to generate temp font")
+        
+        return JSONResponse({
+            "success": True,
+            "temp_font_name": temp_name,
+            "font_url": f"/{font_path}",
+            "test_url": f"/font-test/{temp_name}"
         })
         
     except Exception as e:
