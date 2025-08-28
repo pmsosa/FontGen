@@ -806,19 +806,8 @@ function showCharacterCoverage() {
             charBox.appendChild(indicator);
         }
         
-        // Single click - preview character
+        // Single click - open sizing modal
         charBox.addEventListener('click', (e) => {
-            if (e.detail === 1) { // Single click only
-                setTimeout(() => {
-                    if (e.detail === 1) { // Still single click after timeout
-                        setPreviewText(char.repeat(10));
-                    }
-                }, 200);
-            }
-        });
-        
-        // Double click - open sizing modal
-        charBox.addEventListener('dblclick', () => {
             openCharacterSizingModal(char);
         });
         
