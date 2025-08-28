@@ -680,9 +680,13 @@ function renderSVGText(text, container) {
 function createSVGCharacter(char, charData, size) {
     const wrapper = document.createElement('div');
     
-    // Use bearings settings but scale them appropriately for visual preview
-    const leftBearing = (fontSettings.left_bearing / 10) * (size / 60); // Scale down for reasonable spacing
-    const rightBearing = (fontSettings.right_bearing / 10) * (size / 60);
+    // Use bearings settings (check for character customizations first)
+    const customizations = characterCustomizations[char] || {};
+    const leftBearingValue = customizations.left_bearing !== undefined ? customizations.left_bearing : fontSettings.left_bearing;
+    const rightBearingValue = customizations.right_bearing !== undefined ? customizations.right_bearing : fontSettings.right_bearing;
+    
+    const leftBearing = (leftBearingValue / 10) * (size / 60); // Scale down for reasonable spacing
+    const rightBearing = (rightBearingValue / 10) * (size / 60);
     
     wrapper.style.cssText = `
         display: inline-block;
@@ -737,6 +741,12 @@ function createSVGCharacter(char, charData, size) {
 }
 
 function getCharacterScale(char) {
+    // Check if this character has individual customizations first
+    if (characterCustomizations[char] && characterCustomizations[char].scale_factor !== undefined) {
+        return characterCustomizations[char].scale_factor;
+    }
+    
+    // Fall back to category defaults
     if (char.match(/[A-Z]/)) return fontSettings.uppercase_scale;
     if (char.match(/[a-z]/)) return fontSettings.lowercase_scale;
     if (char.match(/[0-9]/)) return fontSettings.numbers_scale;
