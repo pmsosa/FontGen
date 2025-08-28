@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  fontgen-web:
+    build: .
+    container_name: fontgen-web
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount uploads and downloads for persistence
+      - ./uploads:/app/uploads
+      - ./downloads:/app/downloads
+      - ./temp_files:/app/temp_files
+      # Mount config for easy updates
+      - ./cli/config.json:/app/cli/config.json:ro
+    environment:
+      - PYTHONPATH=/app
+      - FONTGEN_ENV=docker
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Redis for caching (if needed later)
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: fontgen-redis
+  #   ports:
+  #     - "6379:6379"
+  #   restart: unless-stopped
+
+networks:
+  default:
+    name: fontgen-network

@@ -153,11 +153,11 @@ def test_fontgen_initialization():
     
     try:
         # Import the FontGenerator class
-        sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+        sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "web_app"))
         from core.font_generator import FontGenerator
         
         # Try to initialize with the config file
-        config_path = os.path.join("..", "config.json")
+        config_path = os.path.join("..", "..", "cli", "config.json")
         font_gen = FontGenerator(config_path)
         
         # Test basic functionality
@@ -204,7 +204,7 @@ def check_dependencies():
         print("❌ Potrace not installed")
     
     # Check config file
-    config_path = os.path.join("..", "config.json")
+    config_path = os.path.join("..", "..", "cli", "config.json")
     if os.path.exists(config_path):
         print("✅ Config file found")
     else:
