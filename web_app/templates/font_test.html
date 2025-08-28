@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Font Test - {{ font_name }}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bs-bg-opacity: 1;
+            background-color: rgba(var(--bs-dark-rgb), var(--bs-bg-opacity)) !important;
+        }
+        
+        @font-face {
+            font-family: 'TestFont';
+            src: url('{{ font_url }}') format('truetype');
+        }
+        
+        .font-test-area {
+            font-family: 'TestFont', monospace;
+            background-color: #212529;
+            border: 2px solid #495057;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 300px;
+            font-size: 24px;
+            line-height: 1.4;
+            color: #fff;
+            resize: none;
+            width: 100%;
+        }
+        
+        .font-test-area:focus {
+            outline: none;
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+        
+        .size-buttons .btn {
+            margin: 2px;
+        }
+        
+        .sample-text {
+            margin-bottom: 10px;
+            padding: 15px;
+            background-color: #343a40;
+            border-radius: 6px;
+            font-family: 'TestFont', monospace;
+            border: 1px solid #495057;
+        }
+        
+        .controls-panel {
+            position: sticky;
+            top: 20px;
+            background-color: #212529;
+            border: 1px solid #495057;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .download-btn {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            border: none;
+            color: white;
+        }
+        
+        .download-btn:hover {
+            background: linear-gradient(45deg, #218838, #1ea085);
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-dark text-light">
+    <!-- Navigation -->
+    <nav class="navbar navbar-dark bg-dark border-bottom">
+        <div class="container-fluid">
+            <span class="navbar-brand">
+                <i class="bi bi-fonts me-2"></i>{{ font_name }} - Font Test
+            </span>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" onclick="window.close()">
+                    <i class="bi bi-x-lg me-1"></i>Close
+                </button>
+                <a href="{{ font_url }}" download="{{ font_name }}.ttf" class="btn download-btn">
+                    <i class="bi bi-download me-1"></i>Download TTF
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid py-4">
+        <div class="row">
+            <!-- Controls Panel -->
+            <div class="col-md-3">
+                <div class="controls-panel">
+                    <h6><i class="bi bi-sliders me-2"></i>Font Controls</h6>
+                    
+                    <!-- Font Size -->
+                    <div class="mb-3">
+                        <label class="form-label small">Font Size</label>
+                        <div class="size-buttons d-flex flex-wrap mb-2">
+                            <button class="btn btn-outline-primary btn-sm" onclick="setFontSize(12)">12px</button>
+                            <button class="btn btn-outline-primary btn-sm" onclick="setFontSize(16)">16px</button>
+                            <button class="btn btn-outline-primary btn-sm" onclick="setFontSize(20)">20px</button>
+                            <button class="btn btn-outline-primary btn-sm active" onclick="setFontSize(24)">24px</button>
+                            <button class="btn btn-outline-primary btn-sm" onclick="setFontSize(32)">32px</button>
+                            <button class="btn btn-outline-primary btn-sm" onclick="setFontSize(48)">48px</button>
+                            <button class="btn btn-outline-primary btn-sm" onclick="setFontSize(64)">64px</button>
+                        </div>
+                        <input type="range" class="form-range" min="8" max="120" value="24" 
+                               oninput="setFontSize(this.value)" id="font-size-slider">
+                    </div>
+                    
+                    <!-- Line Height -->
+                    <div class="mb-3">
+                        <label class="form-label small">Line Height: <span id="line-height-value">1.4</span></label>
+                        <input type="range" class="form-range" min="1" max="3" step="0.1" value="1.4" 
+                               oninput="setLineHeight(this.value)">
+                    </div>
+                    
+                    <!-- Letter Spacing -->
+                    <div class="mb-4">
+                        <label class="form-label small">Letter Spacing: <span id="letter-spacing-value">0px</span></label>
+                        <input type="range" class="form-range" min="-3" max="10" step="0.5" value="0" 
+                               oninput="setLetterSpacing(this.value)">
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Sample Texts -->
+                    <h6><i class="bi bi-list-ul me-2"></i>Sample Texts</h6>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="loadSampleText('pangram')">Pangram</button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="loadSampleText('lorem')">Lorem Ipsum</button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="loadSampleText('alphabet')">Alphabet</button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="loadSampleText('numbers')">Numbers & Symbols</button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="loadSampleText('custom')">Your Text</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Font Testing Area -->
+            <div class="col-md-9">
+                <h5><i class="bi bi-pencil-square me-2"></i>Test Your Font</h5>
+                <p class="text-muted">Type or paste text below to test your font in real-time:</p>
+                
+                <textarea class="font-test-area" id="test-textarea" placeholder="Type your text here to see how it looks with your custom font...">The quick brown fox jumps over the lazy dog.
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+abcdefghijklmnopqrstuvwxyz
+0123456789 !@#$%^&*()
+{{ font_name }} looks amazing!</textarea>
+                
+                <div class="mt-4">
+                    <h6>Sample Previews:</h6>
+                    
+                    <div class="sample-text" style="font-size: 14px;">
+                        <strong>Small Text (14px):</strong> This is how your font looks in small sizes, like body text or captions.
+                    </div>
+                    
+                    <div class="sample-text" style="font-size: 18px;">
+                        <strong>Medium Text (18px):</strong> Perfect for readable content and comfortable reading.
+                    </div>
+                    
+                    <div class="sample-text" style="font-size: 28px;">
+                        <strong>Large Text (28px):</strong> Great for headings and emphasis.
+                    </div>
+                    
+                    <div class="sample-text" style="font-size: 48px; text-align: center;">
+                        <strong>Display Size (48px)</strong><br>
+                        Perfect for titles and logos
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Font control functions
+        function setFontSize(size) {
+            const textarea = document.getElementById('test-textarea');
+            const samples = document.querySelectorAll('.sample-text');
+            
+            textarea.style.fontSize = size + 'px';
+            
+            // Update slider
+            document.getElementById('font-size-slider').value = size;
+            
+            // Update active button
+            document.querySelectorAll('.size-buttons .btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent === size + 'px') {
+                    btn.classList.add('active');
+                }
+            });
+        }
+        
+        function setLineHeight(value) {
+            const textarea = document.getElementById('test-textarea');
+            textarea.style.lineHeight = value;
+            document.getElementById('line-height-value').textContent = value;
+        }
+        
+        function setLetterSpacing(value) {
+            const textarea = document.getElementById('test-textarea');
+            textarea.style.letterSpacing = value + 'px';
+            document.getElementById('letter-spacing-value').textContent = value + 'px';
+        }
+        
+        // Sample text functions
+        function loadSampleText(type) {
+            const textarea = document.getElementById('test-textarea');
+            
+            const samples = {
+                pangram: "The quick brown fox jumps over the lazy dog.\nPack my box with five dozen liquor jugs.\nHow vexingly quick daft zebras jump!",
+                lorem: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
+                alphabet: "ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n\nUppercase and lowercase letters showcase the full character set of your custom font.",
+                numbers: "0123456789\n!@#$%^&*()\n-_=+[]{}|\\;:'\"<>,.?/\n\nNumbers and symbols test special characters and punctuation marks.",
+                custom: "{{ font_name }}\n\nWrite your own text here!\nTest different words, sentences, and paragraphs.\nSee how your handwriting looks as a real font."
+            };
+            
+            textarea.value = samples[type];
+            textarea.focus();
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set focus to textarea for immediate testing
+            document.getElementById('test-textarea').focus();
+        });
+    </script>
+</body>
+</html>

@@ -15,9 +15,14 @@ import json
 import html
 
 class FontGeneratorPotrace:
-    def __init__(self):
+    def __init__(self, character_overrides_path=None):
         # Load configuration
         self.config = self.load_config()
+        
+        # Load character overrides if provided
+        self.character_overrides = {}
+        if character_overrides_path:
+            self.character_overrides = self.load_character_overrides(character_overrides_path)
         
         # Template settings
         template_settings = self.config['font_generation']['template_settings']
@@ -38,11 +43,20 @@ class FontGeneratorPotrace:
                 individual_scaling = set_data.get('individual_scaling', {})
                 scale_factor = individual_scaling.get(char, set_data['scale_factor'])
                 
-                self.char_properties[char] = {
+                # Default properties from config
+                properties = {
                     'scale_factor': scale_factor,
                     'baseline_offset': set_data['baseline_offset'],
                     'set': set_name
                 }
+                
+                # Apply character-specific overrides if they exist
+                if char in self.character_overrides:
+                    overrides = self.character_overrides[char]
+                    properties.update(overrides)
+                    print(f"Applied overrides for '{char}': {overrides}")
+                
+                self.char_properties[char] = properties
     
     def load_config(self):
         """Load configuration from config.json"""
@@ -55,6 +69,20 @@ class FontGeneratorPotrace:
         except json.JSONDecodeError as e:
             print(f"❌ Error parsing config.json: {e}. Using default settings.")
             return self.get_default_config()
+    
+    def load_character_overrides(self, overrides_path):
+        """Load character-specific overrides from JSON file"""
+        try:
+            with open(overrides_path, 'r') as f:
+                overrides = json.load(f)
+                print(f"✅ Loaded character overrides from {overrides_path}")
+                return overrides
+        except FileNotFoundError:
+            print(f"⚠️ Character overrides file not found: {overrides_path}")
+            return {}
+        except json.JSONDecodeError as e:
+            print(f"❌ Error parsing character overrides JSON: {e}")
+            return {}
     
     def get_default_config(self):
         """Fallback default configuration"""
@@ -111,6 +139,21 @@ class FontGeneratorPotrace:
             f.write(svg_content)
         
         print(f"Template created: {output_path}")
+    
+    def generate_template_png(self, output_path):
+        """Generate PNG template with boxes for each character"""
+        # First generate SVG template
+        svg_path = output_path.replace('.png', '.svg')
+        self.generate_template_svg(svg_path)
+        
+        # Then convert to PNG
+        self.svg_to_png(svg_path, output_path)
+        
+        # Clean up temporary SVG file
+        try:
+            os.remove(svg_path)
+        except:
+            pass
     
     def svg_to_png(self, svg_path, png_path):
         """Convert SVG template to PNG for better Procreate compatibility"""
@@ -424,6 +467,8 @@ def main():
     font_parser.add_argument('image', help='Path to filled template image')
     font_parser.add_argument('--name', '-n', required=True,
                            help='Font name')
+    font_parser.add_argument('--character-overrides', type=str,
+                           help='Path to JSON file with character-specific overrides')
     
     args = parser.parse_args()
     
@@ -431,7 +476,12 @@ def main():
         parser.print_help()
         return
     
-    fontgen = FontGeneratorPotrace()
+    # Pass character overrides path if provided for generate command
+    character_overrides_path = None
+    if args.command == 'generate' and hasattr(args, 'character_overrides') and args.character_overrides:
+        character_overrides_path = args.character_overrides
+    
+    fontgen = FontGeneratorPotrace(character_overrides_path)
     
     if args.command == 'template':
         output_path = f"{args.output}.{args.format}"

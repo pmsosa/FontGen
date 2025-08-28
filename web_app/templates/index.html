@@ -176,6 +176,7 @@
                             <button class="btn btn-outline-secondary btn-sm" onclick="setPreviewText('The quick brown fox jumps over the lazy dog')">Pangram</button>
                             <button class="btn btn-outline-secondary btn-sm" onclick="setPreviewText('ABCabc123!@#')">Character Mix</button>
                             <button class="btn btn-outline-secondary btn-sm" onclick="setPreviewText('My Custom Font')">My Custom Font</button>
+                            <button class="btn btn-outline-info btn-sm" onclick="showAllCharacters()">All Characters</button>
                         </div>
                         <small class="text-muted d-block mt-2">Preview shows exactly how your final font will look</small>
                     </div>
@@ -205,9 +206,17 @@
                 </div>
                 
                 <div class="d-grid gap-2 mt-4">
+                    <button class="btn btn-info btn-lg" id="preview-final-font" disabled>
+                        <span class="btn-text">
+                            <i class="bi bi-eye-fill me-2"></i>Preview Final Font
+                        </span>
+                        <div class="spinner-border spinner-border-sm loading-spinner me-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </button>
                     <button class="btn btn-success btn-lg" id="generate-font" disabled>
                         <span class="btn-text">
-                            <i class="bi bi-download me-2"></i>Generate TTF Font
+                            <i class="bi bi-download me-2"></i>Generate & Download TTF
                         </span>
                         <div class="spinner-border spinner-border-sm loading-spinner me-2" role="status">
                             <span class="visually-hidden">Loading...</span>
@@ -228,6 +237,8 @@
 let uploadedFilePath = null;
 let originalImagePath = null;
 let characterMap = {};
+let characterCustomizations = {}; // Store character-specific overrides
+let currentEditingCharacter = null; // Currently being edited in modal
 let fontSettings = {
     uppercase_scale: 4.0,
     lowercase_scale: 2.8,
@@ -282,11 +293,13 @@ function initializeEventListeners() {
     // Buttons
     const generatePreviewBtn = document.getElementById('generate-preview');
     const generateFontBtn = document.getElementById('generate-font');
+    const previewFinalFontBtn = document.getElementById('preview-final-font');
     const toggleAdvancedBtn = document.getElementById('toggle-advanced');
     const resetDefaultsBtn = document.getElementById('reset-defaults');
     
     if (generatePreviewBtn) generatePreviewBtn.addEventListener('click', generatePreview);
     if (generateFontBtn) generateFontBtn.addEventListener('click', generateFont);
+    if (previewFinalFontBtn) previewFinalFontBtn.addEventListener('click', previewFinalFont);
     if (toggleAdvancedBtn) toggleAdvancedBtn.addEventListener('click', toggleAdvanced);
     if (resetDefaultsBtn) resetDefaultsBtn.addEventListener('click', resetDefaults);
     
@@ -437,6 +450,7 @@ async function generatePreview() {
             
             document.getElementById('preview-section').style.display = 'block';
             document.getElementById('generate-font').disabled = false;
+            document.getElementById('preview-final-font').disabled = false;
             
             // Show character coverage
             showCharacterCoverage();
@@ -473,6 +487,12 @@ async function generateFont() {
     formData.append('original_image_path', originalImagePath);
     formData.append('font_name', fontName);
     
+    // Add character customizations if any exist
+    if (Object.keys(characterCustomizations).length > 0) {
+        formData.append('character_customizations', JSON.stringify(characterCustomizations));
+        console.log('Sending character customizations:', characterCustomizations);
+    }
+    
     try {
         const response = await fetch('/api/generate-font', {
             method: 'POST',
@@ -490,17 +510,22 @@ async function generateFont() {
             a.click();
             document.body.removeChild(a);
             
-            // Show success message
+            // Show success message with test link
             const alert = document.createElement('div');
             alert.className = 'alert alert-success mt-3';
             alert.innerHTML = `
                 <i class="bi bi-check-circle me-2"></i>
                 Font generated successfully! Download should start automatically.
+                <div class="mt-2">
+                    <a href="${result.test_url}" target="_blank" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-eye me-1"></i>Test Your Font
+                    </a>
+                </div>
             `;
             
             button.parentNode.insertBefore(alert, button.nextSibling);
             
-            setTimeout(() => alert.remove(), 5000);
+            setTimeout(() => alert.remove(), 10000);
         } else {
             alert('Font generation failed: ' + result.detail);
         }
@@ -750,13 +775,41 @@ function showCharacterCoverage() {
     
     sortedChars.forEach(char => {
         const charBox = document.createElement('span');
-        charBox.className = 'badge bg-secondary me-1 mb-1';
-        charBox.style.cssText = 'font-size: 0.8rem; cursor: pointer;';
-        charBox.textContent = char === ' ' ? '␣' : char;
-        charBox.title = `Click to preview "${char}"`;
         
-        charBox.addEventListener('click', () => {
-            setPreviewText(char.repeat(10)); // Show character repeated
+        // Check if character has customizations
+        const hasCustomizations = characterCustomizations.hasOwnProperty(char);
+        const badgeClass = hasCustomizations ? 'badge bg-warning text-dark' : 'badge bg-secondary';
+        
+        charBox.className = `${badgeClass} me-1 mb-1 position-relative`;
+        charBox.style.cssText = 'font-size: 0.8rem; cursor: pointer; user-select: none;';
+        charBox.textContent = char === ' ' ? '␣' : char;
+        charBox.title = hasCustomizations 
+            ? `"${char}" - Click to preview, Double-click to edit (CUSTOMIZED)`
+            : `"${char}" - Click to preview, Double-click to edit`;
+        
+        // Add visual indicator for customized characters
+        if (hasCustomizations) {
+            const indicator = document.createElement('span');
+            indicator.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning';
+            indicator.style.cssText = 'font-size: 0.5rem; width: 8px; height: 8px; padding: 0;';
+            indicator.innerHTML = '';
+            charBox.appendChild(indicator);
+        }
+        
+        // Single click - preview character
+        charBox.addEventListener('click', (e) => {
+            if (e.detail === 1) { // Single click only
+                setTimeout(() => {
+                    if (e.detail === 1) { // Still single click after timeout
+                        setPreviewText(char.repeat(10));
+                    }
+                }, 200);
+            }
+        });
+        
+        // Double click - open sizing modal
+        charBox.addEventListener('dblclick', () => {
+            openCharacterSizingModal(char);
         });
         
         coverageGrid.appendChild(charBox);
@@ -771,6 +824,31 @@ function setPreviewText(text) {
     updatePreview();
 }
 
+function showAllCharacters() {
+    // Get all available characters and organize by category
+    const chars = Object.keys(characterMap);
+    
+    // Categorize characters
+    const uppercase = chars.filter(char => /[A-Z]/.test(char)).sort();
+    const lowercase = chars.filter(char => /[a-z]/.test(char)).sort();
+    const numbers = chars.filter(char => /[0-9]/.test(char)).sort();
+    const spanish = chars.filter(char => /[áéíóúüñÁÉÍÓÚÜÑ¿¡]/.test(char)).sort();
+    const symbols = chars.filter(char => 
+        !/[A-Za-z0-9áéíóúüñÁÉÍÓÚÜÑ¿¡\s]/.test(char)
+    ).sort();
+    
+    // Build organized string: UPPERCASE + lowercase + numbers + spanish + symbols
+    const organizedChars = [
+        ...uppercase,
+        ...lowercase, 
+        ...numbers,
+        ...spanish,
+        ...symbols
+    ].join('');
+    
+    setPreviewText(organizedChars);
+}
+
 function resetDefaults() {
     document.getElementById('uppercase-scale').value = 4.0;
     document.getElementById('lowercase-scale').value = 2.8;
@@ -782,6 +860,192 @@ function resetDefaults() {
     
     updateSliderValues();
     updatePreviewLive();
+}
+
+// Character Sizing Modal Functions
+function openCharacterSizingModal(char) {
+    currentEditingCharacter = char;
+    
+    // Set modal title
+    document.getElementById('modal-character').textContent = char === ' ' ? 'Space' : char;
+    
+    // Get default values for this character's category
+    const defaults = getCharacterDefaults(char);
+    
+    // Apply current customizations or defaults
+    const current = characterCustomizations[char] || {};
+    
+    // Set slider values
+    const scale = current.scale_factor || defaults.scale_factor;
+    const baseline = current.baseline_offset || defaults.baseline_offset;
+    const leftBearing = current.left_bearing || fontSettings.left_bearing;
+    const rightBearing = current.right_bearing || fontSettings.right_bearing;
+    
+    document.getElementById('char-scale').value = scale;
+    document.getElementById('char-scale-value').textContent = scale.toFixed(1) + 'x';
+    
+    document.getElementById('char-baseline').value = baseline;
+    document.getElementById('char-baseline-value').textContent = baseline;
+    
+    document.getElementById('char-left-bearing').value = leftBearing;
+    document.getElementById('char-left-bearing-value').textContent = leftBearing;
+    
+    document.getElementById('char-right-bearing').value = rightBearing;
+    document.getElementById('char-right-bearing-value').textContent = rightBearing;
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('characterSizingModal'));
+    modal.show();
+}
+
+function getCharacterDefaults(char) {
+    // Determine character category and return defaults
+    if (/[A-Z]/.test(char)) {
+        return { scale_factor: fontSettings.uppercase_scale, baseline_offset: 150 };
+    } else if (/[a-z]/.test(char)) {
+        return { scale_factor: fontSettings.lowercase_scale, baseline_offset: 120 };
+    } else if (/[0-9]/.test(char)) {
+        return { scale_factor: fontSettings.numbers_scale, baseline_offset: 140 };
+    } else if (/[áéíóúüñÁÉÍÓÚÜÑ¿¡]/.test(char)) {
+        return { scale_factor: 3.5, baseline_offset: 140 };
+    } else {
+        // Symbols - check for existing individual scaling in config
+        const symbolDefaults = { scale_factor: fontSettings.symbols_scale, baseline_offset: 130 };
+        // Handle individual symbol scaling from config
+        const individualScaling = {'.': 2.0, ',': 2.0, "'": 2.5, '`': 2.5, ':': 2.5, ';': 2.5, '-': 2.8, '_': 2.8};
+        if (individualScaling[char]) {
+            symbolDefaults.scale_factor = individualScaling[char];
+        }
+        return symbolDefaults;
+    }
+}
+
+function updateCharacterSlider(property, value) {
+    const valueElement = document.getElementById(`char-${property.replace('_', '-')}-value`);
+    
+    if (property === 'scale') {
+        property = 'scale_factor';
+        valueElement.textContent = parseFloat(value).toFixed(1) + 'x';
+    } else if (property === 'baseline') {
+        property = 'baseline_offset';
+        valueElement.textContent = value;
+    } else {
+        valueElement.textContent = value;
+    }
+}
+
+function resetCharacterToDefaults() {
+    if (!currentEditingCharacter) return;
+    
+    // Remove any customizations for this character
+    delete characterCustomizations[currentEditingCharacter];
+    
+    // Close modal and refresh display
+    bootstrap.Modal.getInstance(document.getElementById('characterSizingModal')).hide();
+    
+    // Refresh character coverage to remove visual indicators
+    showCharacterCoverage();
+    
+    // Update preview if this character is visible
+    updatePreview();
+}
+
+function applyCharacterCustomization() {
+    if (!currentEditingCharacter) return;
+    
+    const char = currentEditingCharacter;
+    
+    // Get values from sliders
+    const scale = parseFloat(document.getElementById('char-scale').value);
+    const baseline = parseInt(document.getElementById('char-baseline').value);
+    const leftBearing = parseInt(document.getElementById('char-left-bearing').value);
+    const rightBearing = parseInt(document.getElementById('char-right-bearing').value);
+    
+    // Get defaults to check what actually changed
+    const defaults = getCharacterDefaults(char);
+    const overrides = {};
+    
+    // Only store values that differ from defaults
+    if (scale !== defaults.scale_factor) {
+        overrides.scale_factor = scale;
+    }
+    if (baseline !== defaults.baseline_offset) {
+        overrides.baseline_offset = baseline;
+    }
+    if (leftBearing !== fontSettings.left_bearing) {
+        overrides.left_bearing = leftBearing;
+    }
+    if (rightBearing !== fontSettings.right_bearing) {
+        overrides.right_bearing = rightBearing;
+    }
+    
+    // Store customizations (or remove if no overrides)
+    if (Object.keys(overrides).length > 0) {
+        characterCustomizations[char] = overrides;
+    } else {
+        delete characterCustomizations[char];
+    }
+    
+    // Close modal and refresh displays
+    bootstrap.Modal.getInstance(document.getElementById('characterSizingModal')).hide();
+    
+    // Refresh character coverage to show/hide visual indicators
+    showCharacterCoverage();
+    
+    // Update preview with new settings
+    updatePreview();
+    
+    console.log(`Applied customizations for "${char}":`, characterCustomizations[char] || 'None');
+}
+
+// Preview final font function
+async function previewFinalFont() {
+    if (!originalImagePath) {
+        showError('No image uploaded. Please upload a filled template first.');
+        return;
+    }
+    
+    try {
+        // Show loading state
+        const btn = document.getElementById('preview-final-font');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Generating Preview...';
+        btn.disabled = true;
+        
+        // Generate temporary font with current character customizations
+        const formData = new FormData();
+        formData.append('original_image_path', originalImagePath);
+        
+        // Add character customizations if any
+        if (Object.keys(characterCustomizations).length > 0) {
+            formData.append('character_customizations', JSON.stringify(characterCustomizations));
+        }
+        
+        const response = await fetch('/api/generate-temp-font', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Open font test page in new window
+            const testWindow = window.open(result.test_url, '_blank', 'width=1200,height=800');
+            if (!testWindow) {
+                showError('Popup blocked. Please allow popups and try again.');
+            }
+        } else {
+            showError('Failed to generate preview font: ' + (result.error || 'Unknown error'));
+        }
+        
+    } catch (error) {
+        showError('Error generating preview: ' + error.message);
+    } finally {
+        // Reset button state
+        const btn = document.getElementById('preview-final-font');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
 }
 
 // Load example template function
