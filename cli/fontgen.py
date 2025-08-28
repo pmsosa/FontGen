@@ -47,6 +47,10 @@ class FontGeneratorPotrace:
                 individual_positioning = set_data.get('individual_positioning', {})
                 baseline_offset = individual_positioning.get(char, set_data['baseline_offset'])
                 
+                # Debug: Print positioning for punctuation marks
+                if char in ['.', ',', '_', "'", '`', '"']:
+                    print(f"DEBUG: Character '{char}' - baseline_offset: {baseline_offset} (individual: {char in individual_positioning})")
+                
                 # Default properties from config
                 properties = {
                     'scale_factor': scale_factor,
@@ -277,6 +281,78 @@ class FontGeneratorPotrace:
         print(f"✅ Potrace converted {successful_conversions} characters to SVG")
         return str(svg_dir) if successful_conversions > 0 else None
     
+    def adjust_svg_positions(self, svg_dir, enable_svg_positioning=False):
+        """Adjust SVG positions for special characters before importing to FontForge"""
+        if not enable_svg_positioning:
+            print("⏭️  SVG positioning adjustment disabled")
+            return svg_dir
+            
+        print("🔧 Adjusting SVG positions for special characters...")
+        
+        svg_files = list(Path(svg_dir).glob("*.svg"))
+        adjusted_count = 0
+        
+        for svg_file in svg_files:
+            try:
+                # Read SVG content
+                with open(svg_file, 'r') as f:
+                    svg_content = f.read()
+                
+                # Get character from filename (unicode value)
+                unicode_val = int(svg_file.stem)
+                char = chr(unicode_val)
+                
+                # Check if this character needs positioning adjustment
+                if char in self.char_properties:
+                    props = self.char_properties[char]
+                    baseline_offset = props['baseline_offset']
+                    
+                    # Only adjust special characters with individual positioning
+                    if char in ['.', ',', '_', "'", '`', '"', ':', ';']:
+                        # Debug: Show what values we're working with
+                        print(f"    DEBUG: '{char}' - baseline_offset: {baseline_offset}, set: {props['set']}")
+                        
+                        # Calculate the adjustment needed
+                        # For underscore: move down (positive Y)
+                        # For quotes: move up (negative Y)
+                        if char == '_':
+                            y_adjustment = baseline_offset * 3  # Move down significantly
+                        elif char in ['"', "'", '`']:
+                            y_adjustment = -baseline_offset * 3  # Move up significantly
+                        else:
+                            y_adjustment = 0
+                        
+                        print(f"    DEBUG: '{char}' - calculated y_adjustment: {y_adjustment}")
+                        
+                        if y_adjustment != 0:
+                            # Apply transformation to the SVG
+                            # Add a transform attribute to the main group or path
+                            if 'transform=' in svg_content:
+                                # Add to existing transform
+                                svg_content = svg_content.replace(
+                                    'transform="',
+                                    f'transform="translate(0,{y_adjustment}) '
+                                )
+                            else:
+                                # Add new transform attribute
+                                svg_content = svg_content.replace(
+                                    '<svg ',
+                                    '<svg transform="translate(0,' + str(y_adjustment) + ')" '
+                                )
+                            
+                            # Write back the modified SVG
+                            with open(svg_file, 'w') as f:
+                                f.write(svg_content)
+                            
+                            adjusted_count += 1
+                            print(f"    Adjusted '{char}' (unicode {unicode_val}): y_offset {y_adjustment}")
+                
+            except Exception as e:
+                print(f"Warning: Could not adjust {svg_file.name}: {e}")
+        
+        print(f"✅ Adjusted {adjusted_count} SVG files for positioning")
+        return svg_dir
+    
     def create_fontforge_script_with_svg(self, svg_dir, font_name):
         """Create FontForge script that imports SVG files with character-specific scaling"""
         
@@ -330,9 +406,11 @@ for char, props in char_properties.items():
             baseline_offset = props['baseline_offset']
             
             glyph.transform(psMat.scale(scale_factor, scale_factor))
-            # Position character properly - move to baseline (Y=0) plus any offset
-            # X=75 for left margin, Y calculation for proper baseline positioning
-            y_position = baseline_offset
+            # Position character properly relative to font baseline
+            # X=75 for left margin, Y calculated from baseline (0) - baseline_offset
+            # Lower baseline_offset values = higher position (toward ascenders)
+            # Higher baseline_offset values = lower position (toward descenders)
+            y_position = 0 - baseline_offset  # Invert: smaller offset = higher position
             glyph.transform(psMat.translate(75, y_position))
             
             # Clean up paths and remove any border artifacts
@@ -396,7 +474,7 @@ if os.path.exists(output_path):
         
         return script_path
     
-    def generate_font_with_potrace(self, image_path, font_name):
+    def generate_font_with_potrace(self, image_path, font_name, enable_svg_positioning=False):
         """Main function to generate TTF font using potrace pipeline"""
         print(f"🚀 Generating TTF font with potrace: '{font_name}'")
         
@@ -421,6 +499,9 @@ if os.path.exists(output_path):
         if not svg_dir:
             print("❌ Potrace conversion failed")
             return False
+        
+        # Step 3.5: Adjust SVG positions if enabled
+        svg_dir = self.adjust_svg_positions(svg_dir, enable_svg_positioning)
         
         # Step 4: Create FontForge script
         script_path = self.create_fontforge_script_with_svg(svg_dir, font_name)
@@ -478,6 +559,8 @@ def main():
                            help='Font name')
     font_parser.add_argument('--character-overrides', type=str,
                            help='Path to JSON file with character-specific overrides')
+    font_parser.add_argument('--enable-svg-positioning', action='store_true',
+                           help='Enable SVG positioning adjustment for special characters (experimental)')
     
     args = parser.parse_args()
     
@@ -509,7 +592,7 @@ def main():
             print(f"Error: Image file '{args.image}' not found")
             return
         
-        success = fontgen.generate_font_with_potrace(args.image, args.name)
+        success = fontgen.generate_font_with_potrace(args.image, args.name, args.enable_svg_positioning)
         if not success:
             print("\n💡 If potrace TTF generation failed, you can still use:")
             print("   python simple_font_generator.py generate [image] --name [name]")

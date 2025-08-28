@@ -912,13 +912,13 @@ function getCharacterDefaults(char) {
         const symbolDefaults = { scale_factor: fontSettings.symbols_scale, baseline_offset: 130 };
         
         // Handle individual symbol scaling from config
-        const individualScaling = {'.': 2.0, ',': 2.0, "'": 2.5, '`': 2.5, ':': 2.5, ';': 2.5, '-': 2.8, '_': 2.8};
+        const individualScaling = {'.': 1.2, ',': 1.2, "'": 1.5, '`': 1.5, '"': 1.5, ':': 2.0, ';': 2.0, '-': 2.3, '_': 2.0};
         if (individualScaling[char]) {
             symbolDefaults.scale_factor = individualScaling[char];
         }
         
         // Handle individual symbol positioning from config  
-        const individualPositioning = {'.': 80, ',': 80, '_': 80, "'": 200, '`': 200, '"': 200};
+        const individualPositioning = {'.': 50, ',': 50, '_': 20, "'": 200, '`': 200, '"': 200};
         if (individualPositioning[char]) {
             symbolDefaults.baseline_offset = individualPositioning[char];
         }
