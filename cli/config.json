@@ -176,7 +176,9 @@
       "ascent": 800,
       "descent": 200,
       "typo_ascent": 800,
-      "typo_descent": -200
+      "typo_descent": -200,
+      "line_gap": 400,
+      "typo_line_gap": 400
     }
   }
 }

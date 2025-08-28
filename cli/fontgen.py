@@ -298,6 +298,8 @@ font.ascent = {font_props['ascent']}
 font.descent = {font_props['descent']}
 font.os2_typoascent = {font_props.get('typo_ascent', font_props['ascent'])}
 font.os2_typodescent = {font_props.get('typo_descent', -font_props['descent'])}
+font.os2_typolinegap = {font_props.get('typo_line_gap', 0)}
+font.hhea_linegap = {font_props.get('line_gap', 0)}
 
 # Character properties mapping
 char_properties = {self.char_properties!r}
@@ -324,7 +326,10 @@ for char, props in char_properties.items():
             baseline_offset = props['baseline_offset']
             
             glyph.transform(psMat.scale(scale_factor, scale_factor))
-            glyph.transform(psMat.translate(75, baseline_offset))
+            # Position character properly - move to baseline (Y=0) plus any offset
+            # X=75 for left margin, Y calculation for proper baseline positioning
+            y_position = baseline_offset
+            glyph.transform(psMat.translate(75, y_position))
             
             # Clean up paths and remove any border artifacts
             glyph.removeOverlap()

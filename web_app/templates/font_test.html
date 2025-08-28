@@ -18,6 +18,9 @@
         @font-face {
             font-family: 'TestFont';
             src: url('{{ font_url }}') format('truetype');
+            font-display: swap;
+            font-weight: normal;
+            font-style: normal;
         }
         
         .font-test-area {
@@ -28,10 +31,12 @@
             padding: 20px;
             min-height: 300px;
             font-size: 24px;
-            line-height: 1.4;
+            line-height: 4.5;
             color: #fff;
             resize: none;
             width: 100%;
+            font-feature-settings: "kern" 1;
+            text-rendering: optimizeLegibility;
         }
         
         .font-test-area:focus {
@@ -51,6 +56,9 @@
             border-radius: 6px;
             font-family: 'TestFont', monospace;
             border: 1px solid #495057;
+            line-height: 4.5;
+            font-feature-settings: "kern" 1;
+            text-rendering: optimizeLegibility;
         }
         
         .controls-panel {
@@ -103,10 +111,10 @@
                     <div class="mb-3">
                         <label class="form-label small">Font Size</label>
                         <div class="size-buttons d-flex flex-wrap mb-2">
-                            <button class="btn btn-outline-primary btn-sm" onclick="setFontSize(12)">12px</button>
+                            <button class="btn btn-outline-primary btn-sm active" onclick="setFontSize(12)">12px</button>
                             <button class="btn btn-outline-primary btn-sm" onclick="setFontSize(16)">16px</button>
                             <button class="btn btn-outline-primary btn-sm" onclick="setFontSize(20)">20px</button>
-                            <button class="btn btn-outline-primary btn-sm active" onclick="setFontSize(24)">24px</button>
+                            <button class="btn btn-outline-primary btn-sm" onclick="setFontSize(24)">24px</button>
                             <button class="btn btn-outline-primary btn-sm" onclick="setFontSize(32)">32px</button>
                             <button class="btn btn-outline-primary btn-sm" onclick="setFontSize(48)">48px</button>
                             <button class="btn btn-outline-primary btn-sm" onclick="setFontSize(64)">64px</button>
@@ -117,8 +125,8 @@
                     
                     <!-- Line Height -->
                     <div class="mb-3">
-                        <label class="form-label small">Line Height: <span id="line-height-value">1.4</span></label>
-                        <input type="range" class="form-range" min="1" max="3" step="0.1" value="1.4" 
+                        <label class="form-label small">Line Height: <span id="line-height-value">1.2</span></label>
+                        <input type="range" class="form-range" min="1" max="6" step="0.1" value="1.2" 
                                oninput="setLineHeight(this.value)">
                     </div>
                     

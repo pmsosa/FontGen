@@ -1001,7 +1001,7 @@ function applyCharacterCustomization() {
 // Preview final font function
 async function previewFinalFont() {
     if (!originalImagePath) {
-        showError('No image uploaded. Please upload a filled template first.');
+        alert('No image uploaded. Please upload a filled template first.');
         return;
     }
     
@@ -1032,14 +1032,14 @@ async function previewFinalFont() {
             // Open font test page in new window
             const testWindow = window.open(result.test_url, '_blank', 'width=1200,height=800');
             if (!testWindow) {
-                showError('Popup blocked. Please allow popups and try again.');
+                alert('Popup blocked. Please allow popups and try again.');
             }
         } else {
-            showError('Failed to generate preview font: ' + (result.error || 'Unknown error'));
+            alert('Failed to generate preview font: ' + (result.error || 'Unknown error'));
         }
         
     } catch (error) {
-        showError('Error generating preview: ' + error.message);
+        alert('Error generating preview: ' + error.message);
     } finally {
         // Reset button state
         const btn = document.getElementById('preview-final-font');
@@ -1088,6 +1088,7 @@ async function loadExampleTemplate() {
                 document.getElementById('preview-section').style.display = 'block';
                 document.getElementById('generate-preview').disabled = false;
                 document.getElementById('generate-font').disabled = false;
+                document.getElementById('preview-final-font').disabled = false;
                 
                 // Auto-generate preview
                 updatePreview();
