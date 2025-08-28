@@ -908,13 +908,21 @@ function getCharacterDefaults(char) {
     } else if (/[áéíóúüñÁÉÍÓÚÜÑ¿¡]/.test(char)) {
         return { scale_factor: 3.5, baseline_offset: 140 };
     } else {
-        // Symbols - check for existing individual scaling in config
+        // Symbols - check for existing individual scaling and positioning in config
         const symbolDefaults = { scale_factor: fontSettings.symbols_scale, baseline_offset: 130 };
+        
         // Handle individual symbol scaling from config
         const individualScaling = {'.': 2.0, ',': 2.0, "'": 2.5, '`': 2.5, ':': 2.5, ';': 2.5, '-': 2.8, '_': 2.8};
         if (individualScaling[char]) {
             symbolDefaults.scale_factor = individualScaling[char];
         }
+        
+        // Handle individual symbol positioning from config  
+        const individualPositioning = {'.': 80, ',': 80, '_': 80, "'": 200, '`': 200, '"': 200};
+        if (individualPositioning[char]) {
+            symbolDefaults.baseline_offset = individualPositioning[char];
+        }
+        
         return symbolDefaults;
     }
 }
@@ -1004,10 +1012,12 @@ async function previewFinalFont() {
         return;
     }
     
+    // Get button and save original text before try block
+    const btn = document.getElementById('preview-final-font');
+    const originalText = btn.innerHTML;
+    
     try {
         // Show loading state
-        const btn = document.getElementById('preview-final-font');
-        const originalText = btn.innerHTML;
         btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Generating Preview...';
         btn.disabled = true;
         
@@ -1041,7 +1051,6 @@ async function previewFinalFont() {
         alert('Error generating preview: ' + error.message);
     } finally {
         // Reset button state
-        const btn = document.getElementById('preview-final-font');
         btn.innerHTML = originalText;
         btn.disabled = false;
     }

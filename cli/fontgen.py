@@ -43,10 +43,14 @@ class FontGeneratorPotrace:
                 individual_scaling = set_data.get('individual_scaling', {})
                 scale_factor = individual_scaling.get(char, set_data['scale_factor'])
                 
+                # Check for individual positioning override
+                individual_positioning = set_data.get('individual_positioning', {})
+                baseline_offset = individual_positioning.get(char, set_data['baseline_offset'])
+                
                 # Default properties from config
                 properties = {
                     'scale_factor': scale_factor,
-                    'baseline_offset': set_data['baseline_offset'],
+                    'baseline_offset': baseline_offset,
                     'set': set_name
                 }
                 
