@@ -15,7 +15,7 @@
 ### 1. Start the Web Application
 ```bash
 cd FontGen/web_app
-./startweb.sh
+python web_app/run.py
 ```
 
 ### 2. Run API Tests
@@ -124,4 +124,4 @@ curl -X POST http://localhost:8000/api/upload-image \
 - `templates/` - HTML templates with JavaScript
 - `test_api.py` - API endpoint tests
 - `test_upload.html` - Simple file upload test page
-- `startweb.sh` - Web app startup script
+- `run.py` - Web app startup script

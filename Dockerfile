@@ -44,7 +44,7 @@ COPY . .
 RUN mkdir -p uploads downloads temp_files
 
 # Set permissions
-RUN chmod +x web_app/startweb.sh
+RUN chmod +x web_app/run.py
 
 # Expose port
 EXPOSE 8000
@@ -54,4 +54,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/ || exit 1
 
 # Default command
-CMD ["python3", "web_app/main.py"]
+CMD ["python3", "web_app/run.py"]

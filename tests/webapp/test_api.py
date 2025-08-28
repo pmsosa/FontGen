@@ -222,7 +222,7 @@ def main():
     
     # Test if server is running
     if not test_server_running():
-        print("\n❌ Server is not running. Start it with: ./startweb.sh")
+        print("\n❌ Server is not running. Start it with: python web_app/run.py")
         return
     
     # Run API tests
