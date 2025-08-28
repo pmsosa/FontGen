@@ -1,5 +1,7 @@
 # FontGen - Custom Font Generator
 
+[![FontGen CI/CD Pipeline](https://github.com/pmsosa/FontGen/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/pmsosa/FontGen/actions/workflows/ci-cd.yml)
+
 Turn your handwriting into professional TTF fonts using advanced vectorization! Available as both a **modern web UI** and **command-line interface**.
 
 ## 🚀 Quick Start

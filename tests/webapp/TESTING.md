@@ -14,14 +14,14 @@
 
 ### 1. Start the Web Application
 ```bash
-cd /Users/bullshark/Desktop/Playground/FontGen/web_app
+cd FontGen/web_app
 ./startweb.sh
 ```
 
 ### 2. Run API Tests
 ```bash
 # In another terminal
-cd /Users/bullshark/Desktop/Playground/FontGen/web_app
+cd FontGen/web_app
 source venv/bin/activate
 python test_api.py
 ```

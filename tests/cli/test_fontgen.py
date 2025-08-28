@@ -10,8 +10,20 @@ import subprocess
 import sys
 import json
 from pathlib import Path
-from PIL import Image, ImageDraw
-sys.path.append('/Users/bullshark/Desktop/Playground/FontGen/cli')
+
+# Try to import PIL, but make it optional
+try:
+    from PIL import Image, ImageDraw
+    PIL_AVAILABLE = True
+except ImportError:
+    PIL_AVAILABLE = False
+    print("⚠️  PIL not available, some tests will be skipped")
+
+# Add the CLI directory to the Python path relative to the test file
+current_dir = os.path.dirname(os.path.abspath(__file__))
+cli_dir = os.path.join(current_dir, '..', '..', 'cli')
+sys.path.insert(0, cli_dir)
+
 from fontgen import FontGeneratorPotrace
 
 class TestFontGen(unittest.TestCase):
@@ -69,6 +81,11 @@ class TestFontGen(unittest.TestCase):
         with open(self.config_path, 'w') as f:
             json.dump(test_config, f)
         
+        # Create main config.json in test directory
+        main_config_path = os.path.join(self.test_dir, "config.json")
+        with open(main_config_path, 'w') as f:
+            json.dump(test_config, f)
+        
         # Change to test directory so config is found
         self.original_cwd = os.getcwd()
         os.chdir(self.test_dir)
@@ -82,7 +99,7 @@ class TestFontGen(unittest.TestCase):
         shutil.rmtree(self.test_dir, ignore_errors=True)
         
     def test_fontforge_installation(self):
-        """Test if FontForge is properly installed and working on M2"""
+        """Test if FontForge is properly installed and working"""
         print("\n🔍 Testing FontForge installation...")
         
         try:
@@ -95,16 +112,31 @@ class TestFontGen(unittest.TestCase):
             
             print(f"✅ FontForge version: {result.stdout.strip()}")
             
-            # Check if it's native ARM64 or running under Rosetta
-            arch_result = subprocess.run(['file', '/opt/homebrew/bin/fontforge'], 
-                                       capture_output=True, text=True)
-            
-            if 'arm64' in arch_result.stdout:
-                print("✅ FontForge is running natively on ARM64 (M2 compatible)")
-            elif 'x86_64' in arch_result.stdout:
-                print("⚠️  FontForge is x86_64 (may require Rosetta)")
-            else:
-                print(f"ℹ️  Architecture info: {arch_result.stdout}")
+            # Check architecture (cross-platform)
+            try:
+                # Try to find FontForge path
+                which_result = subprocess.run(['which', 'fontforge'], 
+                                           capture_output=True, text=True)
+                if which_result.returncode == 0:
+                    fontforge_path = which_result.stdout.strip()
+                    print(f"✅ FontForge found at: {fontforge_path}")
+                    
+                    # Check architecture if possible
+                    if os.path.exists(fontforge_path):
+                        arch_result = subprocess.run(['file', fontforge_path], 
+                                                   capture_output=True, text=True)
+                        if 'arm64' in arch_result.stdout:
+                            print("✅ FontForge is running natively on ARM64")
+                        elif 'x86_64' in arch_result.stdout:
+                            print("✅ FontForge is running on x86_64")
+                        else:
+                            print(f"ℹ️  Architecture info: {arch_result.stdout}")
+                    else:
+                        print("ℹ️  Could not determine architecture")
+                else:
+                    print("ℹ️  FontForge path not found")
+            except Exception as e:
+                print(f"ℹ️  Architecture check skipped: {e}")
                 
         except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired) as e:
             self.fail(f"FontForge test failed: {e}")
@@ -237,6 +269,9 @@ except Exception as e:
     
     def test_png_template_generation(self):
         """Test PNG template generation via SVG conversion"""
+        if not PIL_AVAILABLE:
+            self.skipTest("PIL not available, skipping PNG test")
+            
         print("\n🖼️  Testing PNG template generation...")
         
         # First generate SVG, then convert to PNG
@@ -258,6 +293,9 @@ except Exception as e:
     
     def test_character_extraction(self):
         """Test character extraction from filled template"""
+        if not PIL_AVAILABLE:
+            self.skipTest("PIL not available, skipping character extraction test")
+            
         print("\n✂️  Testing character extraction...")
         
         # Create a mock filled template
@@ -291,6 +329,9 @@ except Exception as e:
     
     def test_potrace_preprocessing(self):
         """Test potrace preprocessing pipeline"""
+        if not PIL_AVAILABLE:
+            self.skipTest("PIL not available, skipping potrace preprocessing test")
+            
         print("\n🔧 Testing potrace preprocessing...")
         
         # Create a mock filled template
@@ -315,6 +356,9 @@ except Exception as e:
     
     def test_potrace_conversion(self):
         """Test potrace bitmap-to-vector conversion"""
+        if not PIL_AVAILABLE:
+            self.skipTest("PIL not available, skipping potrace conversion test")
+            
         print("\n🎨 Testing potrace conversion...")
         
         if not self._check_potrace_available():
@@ -354,6 +398,9 @@ except Exception as e:
     
     def test_end_to_end_workflow(self):
         """Test complete potrace workflow without FontForge"""
+        if not PIL_AVAILABLE:
+            self.skipTest("PIL not available, skipping end-to-end workflow test")
+            
         print("\n🔄 Testing end-to-end potrace workflow (without font generation)...")
         
         # Step 1: Generate template
@@ -396,7 +443,10 @@ except Exception as e:
         print("✅ End-to-end workflow preparation completed")
     
     def test_performance_check(self):
-        """Test performance on M2 hardware"""
+        """Test performance on current hardware"""
+        if not PIL_AVAILABLE:
+            self.skipTest("PIL not available, skipping performance test")
+            
         print("\n⚡ Testing performance...")
         
         import time
@@ -409,8 +459,8 @@ except Exception as e:
         
         # Time character extraction
         start_time = time.time()
-        perf_svg = os.path.join(self.test_dir, "perf_template2.svg")
-        png_path = os.path.join(self.test_dir, "perf_template.png")
+        perf_svg = os.path.join(self.test_dir, "test_performance.svg")
+        png_path = os.path.join(self.test_dir, "test_performance.png")
         self.fontgen.generate_template_svg(perf_svg)
         self.fontgen.svg_to_png(perf_svg, png_path)
         char_dir = self.fontgen.extract_characters_from_image(png_path, "PerfTest")
@@ -419,7 +469,7 @@ except Exception as e:
         print(f"✅ SVG generation: {svg_time:.2f}s")
         print(f"✅ PNG + extraction: {extraction_time:.2f}s")
         
-        # Performance should be reasonable on M2
+        # Performance should be reasonable on current hardware
         self.assertLess(svg_time, 5.0, "SVG generation too slow")
         self.assertLess(extraction_time, 10.0, "Character extraction too slow")
 
@@ -435,24 +485,37 @@ def run_system_info():
     except:
         print("Architecture: Unknown")
     
-    # macOS version
+    # OS version
     try:
-        result = subprocess.run(['sw_vers', '-productVersion'], capture_output=True, text=True)
-        print(f"macOS Version: {result.stdout.strip()}")
+        if os.name == 'posix':
+            if os.path.exists('/etc/os-release'):
+                with open('/etc/os-release', 'r') as f:
+                    for line in f:
+                        if line.startswith('PRETTY_NAME='):
+                            os_name = line.split('=', 1)[1].strip().strip('"')
+                            print(f"OS: {os_name}")
+                            break
+            elif os.path.exists('/System/Library/CoreServices/SystemVersion.plist'):
+                result = subprocess.run(['sw_vers', '-productVersion'], capture_output=True, text=True)
+                print(f"macOS Version: {result.stdout.strip()}")
+            else:
+                print("OS: Linux/Unix")
+        else:
+            print(f"OS: {os.name}")
     except:
-        print("macOS Version: Unknown")
+        print("OS: Unknown")
     
     # Python version
     print(f"Python Version: {sys.version}")
     
-    # Homebrew prefix (for M1/M2 vs Intel)
+    # Package manager prefix
     brew_prefix = os.environ.get('HOMEBREW_PREFIX', 'Not set')
     print(f"Homebrew Prefix: {brew_prefix}")
     
     print()
 
 if __name__ == '__main__':
-    print("🧪 FontGen Potrace Unit Tests - M2 Mac Compatibility Check")
+    print("🧪 FontGen Potrace Unit Tests - Cross-Platform Compatibility Check")
     print("=" * 65)
     
     # Print system info first
