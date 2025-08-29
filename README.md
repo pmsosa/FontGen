@@ -7,6 +7,18 @@ Turn your handwriting into professional TTF fonts using advanced vectorization! 
 ## 🚀 Quick Start
 
 ### Web UI (Recommended)
+
+**Option 1: Docker (Easiest)**
+1. **Run with Docker Compose:**
+   ```bash
+   docker-compose up -d
+   ```
+
+2. **Open your browser:**
+   - Navigate to http://localhost:8000
+   - Generate template → Draw characters → Upload → Generate font!
+
+**Option 2: Local Installation**
 1. **Install dependencies:**
    ```bash
    # macOS
@@ -50,11 +62,47 @@ FontGen/
 └── run_web.sh            # Start web UI
 ```
 
+## 🐳 Docker Setup
+
+**Prerequisites:**
+- Docker and Docker Compose installed on your system
+
+**Quick Start:**
+```bash
+# Start the web interface
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop the service
+docker-compose down
+```
+
+**Features:**
+- ✅ No manual dependency installation required
+- ✅ Consistent environment across all platforms
+- ✅ Persistent storage for uploads and downloads
+- ✅ Auto-restart on system reboot
+- ✅ Built-in health checks
+
+**File Persistence:**
+The Docker setup automatically mounts these directories for persistence:
+- `uploads/` - Your uploaded drawings
+- `downloads/` - Generated font files
+- `temp_files/` - Processing files
+- `cli/config.json` - Font configuration (read-only)
+
 ## Requirements
 
+**For Local Installation:**
 - **Python 3.6+**
 - **FontForge** - Font generation engine
 - **Potrace** - Superior bitmap-to-vector conversion
+
+**For Docker:**
+- **Docker** - Container platform
+- **Docker Compose** - Multi-container orchestration
 
 ### Installing Dependencies
 

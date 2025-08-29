@@ -17,15 +17,16 @@ from core.cli_wrapper import CLIWrapper
 
 app = FastAPI(title="FontGen Web UI", description="Generate custom TTF fonts from handwriting")
 
-# Setup templates and static files
-templates = Jinja2Templates(directory="templates")
-app.mount("/static", StaticFiles(directory="static"), name="static")
-app.mount("/downloads", StaticFiles(directory="downloads"), name="downloads")
-
-# Create required directories
+# Create required directories FIRST
 os.makedirs("uploads", exist_ok=True)
 os.makedirs("downloads", exist_ok=True)
 os.makedirs("temp_files", exist_ok=True)
+os.makedirs("static", exist_ok=True)
+
+# Setup templates and static files AFTER directories exist
+templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/downloads", StaticFiles(directory="downloads"), name="downloads")
 
 # Global CLI wrapper instance  
 cli_wrapper = CLIWrapper()
