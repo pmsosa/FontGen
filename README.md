@@ -82,7 +82,7 @@ docker-compose down
 **Using the Published Image:**
 ```bash
 # Pull the latest image directly
-docker pull ghcr.io/pmsosa/FontGen:latest
+docker pull ghcr.io/pmsosa/fontgen:latest
 
 # Run without docker-compose
 docker run -d \
@@ -91,7 +91,7 @@ docker run -d \
   -v $(pwd)/uploads:/app/uploads \
   -v $(pwd)/downloads:/app/downloads \
   -v $(pwd)/temp_files:/app/temp_files \
-  ghcr.io/pmsosa/FontGen:latest
+  ghcr.io/pmsosa/fontgen:latest
 ```
 
 **Features:**

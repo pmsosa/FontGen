@@ -137,43 +137,43 @@ jobs:
       run: |
         echo "🚀 Publishing to GitHub Container Registry..."
         
-        # Login to GitHub Container Registry
-        echo ${{ secrets.CR_PAT }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+        # Login to GitHub Container Registry (suppress warning)
+        echo ${{ secrets.CR_PAT }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin 2>/dev/null
         
-        # Tag the image for the registry
-        docker tag ${{ env.DOCKER_IMAGE }}:latest ghcr.io/${{ github.repository }}:latest
+        # Tag the image for the registry (using lowercase)
+        docker tag ${{ env.DOCKER_IMAGE }}:latest ghcr.io/${{ github.repository_owner }}/fontgen:latest
         
         # Also tag with the commit SHA for versioning
-        docker tag ${{ env.DOCKER_IMAGE }}:latest ghcr.io/${{ github.repository }}:${{ github.sha }}
+        docker tag ${{ env.DOCKER_IMAGE }}:latest ghcr.io/${{ github.repository_owner }}/fontgen:${{ github.sha }}
         
         # Tag with semantic version if available
         if [[ "${{ github.ref }}" == "refs/tags/v"* ]]; then
           VERSION=${GITHUB_REF#refs/tags/}
-          docker tag ${{ env.DOCKER_IMAGE }}:latest ghcr.io/${{ github.repository }}:$VERSION
+          docker tag ${{ env.DOCKER_IMAGE }}:latest ghcr.io/${{ github.repository_owner }}/fontgen:$VERSION
         fi
         
         # Push all tags
         echo "Pushing latest tag..."
-        docker push ghcr.io/${{ github.repository }}:latest
+        docker push ghcr.io/${{ github.repository_owner }}/fontgen:latest
         
         echo "Pushing commit SHA tag..."
-        docker push ghcr.io/${{ github.repository }}:${{ github.sha }}
+        docker push ghcr.io/${{ github.repository_owner }}/fontgen:${{ github.sha }}
         
         if [[ "${{ github.ref }}" == "refs/tags/v"* ]]; then
           echo "Pushing version tag..."
-          docker push ghcr.io/${{ github.repository }}:$VERSION
+          docker push ghcr.io/${{ github.repository_owner }}/fontgen:$VERSION
         fi
         
         echo "✅ Successfully published to GitHub Container Registry!"
-        echo "📦 Image: ghcr.io/${{ github.repository }}:latest"
-        echo "🔗 Pull with: docker pull ghcr.io/${{ github.repository }}:latest"
+        echo "📦 Image: ghcr.io/${{ github.repository_owner }}/fontgen:latest"
+        echo "🔗 Pull with: docker pull ghcr.io/${{ github.repository_owner }}/fontgen:latest"
         
         # Make the package public (required for public repos)
         echo "🌐 Making package public..."
         gh auth login --with-token <<< "${{ secrets.CR_PAT }}"
         gh api \
           --method PUT \
-          /user/packages/container/${{ env.DOCKER_IMAGE }}/visibility \
+          /user/packages/container/fontgen/visibility \
           --field visibility=public
 
   security-scan:
