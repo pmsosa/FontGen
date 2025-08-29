@@ -42,7 +42,7 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Create necessary directories
-RUN mkdir -p uploads downloads temp_files
+RUN mkdir -p uploads downloads temp_files web_app/static
 
 # Set permissions
 RUN chmod +x web_app/run.py
