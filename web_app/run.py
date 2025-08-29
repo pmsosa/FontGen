@@ -11,15 +11,21 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 if __name__ == "__main__":
+    # Check if running in production mode
+    is_prod = os.getenv("isProd", "false").lower() == "true"
+    host = "0.0.0.0" if is_prod else "127.0.0.1"
+    
     print("🚀 Starting FontGen Web UI...")
-    print("📍 Navigate to: http://localhost:8000")
+    print(f"📍 Navigate to: http://localhost:8000")
+    print(f"🔧 Mode: {'Production' if is_prod else 'Development'}")
+    print(f"🌐 Host: {host}")
     print("🛑 Press Ctrl+C to stop")
     print("-" * 50)
     
     uvicorn.run(
         "main:app",
-        host="127.0.0.1",
+        host=host,
         port=8000,
-        reload=True,
+        reload=not is_prod,  # Disable reload in production
         log_level="info"
     )

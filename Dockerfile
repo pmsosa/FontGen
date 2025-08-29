@@ -7,6 +7,7 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
+ENV isProd=true
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -53,5 +54,6 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/ || exit 1
 
-# Default command
-CMD ["python3", "web_app/run.py"]
+# Change to web_app directory and run
+WORKDIR /app/web_app
+CMD ["python3", "run.py"]
