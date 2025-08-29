@@ -79,6 +79,21 @@ docker-compose logs -f
 docker-compose down
 ```
 
+**Using the Published Image:**
+```bash
+# Pull the latest image directly
+docker pull ghcr.io/pmsosa/FontGen:latest
+
+# Run without docker-compose
+docker run -d \
+  --name fontgen-web \
+  -p 8000:8000 \
+  -v $(pwd)/uploads:/app/uploads \
+  -v $(pwd)/downloads:/app/downloads \
+  -v $(pwd)/temp_files:/app/temp_files \
+  ghcr.io/pmsosa/FontGen:latest
+```
+
 **Features:**
 - ✅ No manual dependency installation required
 - ✅ Consistent environment across all platforms

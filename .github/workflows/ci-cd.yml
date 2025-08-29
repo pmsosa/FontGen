@@ -132,12 +132,49 @@ jobs:
         docker rm -f fontgen-test
         echo "✅ Docker container test completed"
         
-    - name: Upload Docker image to registry (on main branch)
+    - name: Upload Docker image to GitHub Container Registry
       if: github.ref == 'refs/heads/main'
       run: |
-        echo "🚀 Would upload to registry here (configure registry credentials)"
-        # docker tag ${{ env.DOCKER_IMAGE }}:latest your-registry/${{ env.DOCKER_IMAGE }}:latest
-        # docker push your-registry/${{ env.DOCKER_IMAGE }}:latest
+        echo "🚀 Publishing to GitHub Container Registry..."
+        
+        # Login to GitHub Container Registry
+        echo ${{ secrets.CR_PAT }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+        
+        # Tag the image for the registry
+        docker tag ${{ env.DOCKER_IMAGE }}:latest ghcr.io/${{ github.repository }}:latest
+        
+        # Also tag with the commit SHA for versioning
+        docker tag ${{ env.DOCKER_IMAGE }}:latest ghcr.io/${{ github.repository }}:${{ github.sha }}
+        
+        # Tag with semantic version if available
+        if [[ "${{ github.ref }}" == "refs/tags/v"* ]]; then
+          VERSION=${GITHUB_REF#refs/tags/}
+          docker tag ${{ env.DOCKER_IMAGE }}:latest ghcr.io/${{ github.repository }}:$VERSION
+        fi
+        
+        # Push all tags
+        echo "Pushing latest tag..."
+        docker push ghcr.io/${{ github.repository }}:latest
+        
+        echo "Pushing commit SHA tag..."
+        docker push ghcr.io/${{ github.repository }}:${{ github.sha }}
+        
+        if [[ "${{ github.ref }}" == "refs/tags/v"* ]]; then
+          echo "Pushing version tag..."
+          docker push ghcr.io/${{ github.repository }}:$VERSION
+        fi
+        
+        echo "✅ Successfully published to GitHub Container Registry!"
+        echo "📦 Image: ghcr.io/${{ github.repository }}:latest"
+        echo "🔗 Pull with: docker pull ghcr.io/${{ github.repository }}:latest"
+        
+        # Make the package public (required for public repos)
+        echo "🌐 Making package public..."
+        gh auth login --with-token <<< "${{ secrets.CR_PAT }}"
+        gh api \
+          --method PUT \
+          /user/packages/container/${{ env.DOCKER_IMAGE }}/visibility \
+          --field visibility=public
 
   security-scan:
     name: Security Scan

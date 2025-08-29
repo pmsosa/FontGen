@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   fontgen-web:
-    build: .
+    image: ghcr.io/pmsosa/FontGen:latest
     container_name: fontgen-web
     ports:
       - "8000:8000"
